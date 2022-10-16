@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Frame name="GID">
+		<Scripts>
+			<OnLoad>
+				self:RegisterEvent("CHAT_MSG_ADDON");
+				self:RegisterEvent("PLAYER_ENTERING_WORLD");
+				self:RegisterEvent("ADDON_LOADED");
+				self:RegisterEvent("INSTANCE_LOCK_START");
+			</OnLoad>
+			<OnEvent>
+				GID:onEvent(event, ...);
+			</OnEvent>
+		</Scripts>
+    </Frame>
+</Ui>

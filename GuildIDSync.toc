@@ -1,0 +1,17 @@
+## Interface: 30400
+## Version: 1.0.0
+## Title: Guild ID Sync
+## Notes: Addon to sync used IDs from Guild members
+## Author: Lisilya@Transcendence
+## SavedVariables: GuildIDs, GIDUIPrefs, GuildIDSyncDB
+
+Libs\LibStub\LibStub.lua
+Libs\LibDeflate\LibDeflate.lua
+Libs\LibSerialize\lib.xml
+
+init.lua
+Helpers.lua
+Localization.de.lua
+GuildIDSync.lua
+GuildIDSync.xml
+GuildIDSyncUI.lua
