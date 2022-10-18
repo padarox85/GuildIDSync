@@ -99,9 +99,9 @@ function GID:compress(data)
         local compressed = LibDeflate:CompressDeflate(serialized)
         return LibDeflate:EncodeForWoWAddonChannel(compressed)
     end
- end
+end
 
- function GID:decompress(payload)
+function GID:decompress(payload)
     if payload ~= nil then
         local decoded = LibDeflate:DecodeForWoWAddonChannel(payload)
         if not decoded then return end
@@ -111,4 +111,22 @@ function GID:compress(data)
         if not success then return end
         return data
     end
+end
+
+
+function Set_Contains(set, key)
+   return set[key] ~= nil
+end
+
+function string:split(delimiter)
+   local result = {}
+   local from  = 1
+   local delim_from, delim_to = string.find(self, delimiter, from)
+   while delim_from do
+     table.insert( result, string.sub(self, from , delim_from-1))
+     from  = delim_to + 1
+     delim_from, delim_to = string.find(self, delimiter, from)
+   end
+   table.insert( result, string.sub(self, from))
+   return result
  end
