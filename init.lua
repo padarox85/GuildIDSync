@@ -5,6 +5,7 @@ GID_VERSION = "0.0.1";
 CHAR = {}
 CHAR.NAME, CHAR.REALM = UnitName("player")
 CHAR.LEVEL = UnitLevel("player")
+LAST_UPDATE = nil
 
 -- User Variables
 MYIDS = {}

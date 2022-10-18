@@ -6,7 +6,6 @@
 				self:RegisterEvent("CHAT_MSG_ADDON");
 				self:RegisterEvent("PLAYER_ENTERING_WORLD");
 				self:RegisterEvent("ADDON_LOADED");
-				self:RegisterEvent("INSTANCE_LOCK_START");
 			</OnLoad>
 			<OnEvent>
 				GID:onEvent(event, ...);
