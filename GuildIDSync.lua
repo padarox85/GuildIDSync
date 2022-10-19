@@ -109,7 +109,7 @@ function GID:get_online_players()
    local numTotalMembers, numOnlineMaxLevelMembers, numOnlineMembers = GetNumGuildMembers();
    for player_index=1, numTotalMembers, 1 do
       local name, rank, rankIndex, level, class, zone, note, officernote, online, status, classFileName, achievementPoints, achievementRank, isMobile, isSoREligible, standingID = GetGuildRosterInfo(player_index);
-      local char_name = string.split(name, "-")[1]
+      local char_name = GID:string_split(name, "-")[1]
       if online then
          online_players[char_name] = true
       end
@@ -118,7 +118,7 @@ function GID:get_online_players()
 end
 
 function GID:check_player_is_online(player_name)
-   if Set_Contains(GID:get_online_players(), player_name) then
+   if GID:Set_Contains(GID:get_online_players(), player_name) then
       return true
    end
    return false

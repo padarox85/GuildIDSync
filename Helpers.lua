@@ -44,7 +44,7 @@ GID.raids["Prüfung des Kreuzfahrers"] = false
 GID.raids["Eiskronenzitadelle"] = false
 GID.raids["Das Rubinsanktum"] = false
 
-function MenuListItems(Items, difficulty)
+function GID:MenuListItems(Items, difficulty)
 	local i = 0
 	for instance_name, active in pairs(Items) do
 		local cb = CreateFrame("Button", "InstanceCheckBox"..i, LeftMenu,"OptionsListButtonTemplate")
@@ -114,19 +114,19 @@ function GID:decompress(payload)
 end
 
 
-function Set_Contains(set, key)
+function GID:Set_Contains(set, key)
    return set[key] ~= nil
 end
 
-function string:split(delimiter)
+function GID:string_split(s, delimiter)
    local result = {}
    local from  = 1
-   local delim_from, delim_to = string.find(self, delimiter, from)
+   local delim_from, delim_to = string.find(s, delimiter, from)
    while delim_from do
-     table.insert( result, string.sub(self, from , delim_from-1))
+     table.insert( result, string.sub(s, from , delim_from-1))
      from  = delim_to + 1
-     delim_from, delim_to = string.find(self, delimiter, from)
+     delim_from, delim_to = string.find(s, delimiter, from)
    end
-   table.insert( result, string.sub(self, from))
+   table.insert( result, string.sub(s, from))
    return result
  end
