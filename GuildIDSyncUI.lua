@@ -45,15 +45,15 @@ local function DifficultyMenu_OnClick(self, arg1, arg2, checked)
 	if arg1 == "Heroics" then
 		UIDropDownMenu_SetText(dropDown, "Heroische Instanzen")
 		LeftMenu:HideAllItems()
-		MenuListItems(GID.instances, arg1)
+		GID:MenuListItems(GID.instances, arg1)
 	elseif arg1 == "10 Spieler" then
 		UIDropDownMenu_SetText(dropDown, "Raid: 10 Spieler")
 		LeftMenu:HideAllItems()
-		MenuListItems(GID.raids, arg1)
+		GID:MenuListItems(GID.raids, arg1)
 	elseif arg1 == "25 Spieler" then
 		UIDropDownMenu_SetText(dropDown, "Raid: 25 Spieler")
 		LeftMenu:HideAllItems()
-		MenuListItems(GID.raids, arg1)
+		GID:MenuListItems(GID.raids, arg1)
 	end
 end
 
