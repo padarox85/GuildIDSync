@@ -90,9 +90,9 @@ GID.pvpQuests = {
 		11335, 11336, 11337, 11338, 11339, 11340, 11341, 11342, 11499, 11500, -- Repeat IDs from TBC often used
 		13442, 13443, 13444, 13445, 13446, 13447, 13448, 13449, 13450, -- Newer WotLK IDs
 	} },
-	{ name = GID_L["PVP_HELLFIRE"], ids = { 9399, 10106 } }, -- Hellfire Fortifications (H/A)
-	{ name = GID_L["PVP_ZANGAR"], ids = { 10110, 10111 } }, -- Twin Spire Blessings (H/A)
-	{ name = GID_L["PVP_TEROKKAR"], ids = { 10090, 10091 } }, -- Spirits of Auchindoun (A/H)
+	{ name = GID_L["PVP_HELLFIRE"], ids = { 13409, 10106 } }, -- Hellfire Fortifications (H/A)
+	{ name = GID_L["PVP_ZANGAR"], ids = { 9739, 9738 } }, -- Twin Spire Blessings (H/A)
+	{ name = GID_L["PVP_TEROKKAR"], ids = { 11505, 11506 } }, -- Spirits of Auchindoun (A/H)
 	{ name = GID_L["PVP_NAGRAND"], ids = { 10107, 10108 } }, -- Halaa (A/H)
 }
 
