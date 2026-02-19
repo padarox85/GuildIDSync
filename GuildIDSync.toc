@@ -1,4 +1,4 @@
-## Interface: 30400
+## Interface: 30400, 20505
 ## Version: 1.0.3
 ## Title: Guild ID Sync
 ## Notes: Addon to sync used IDs from Guild members
@@ -10,8 +10,8 @@ Libs\LibDeflate\LibDeflate.lua
 Libs\LibSerialize\lib.xml
 
 init.lua
+Localization.lua
 Helpers.lua
-Localization.de.lua
 GuildIDSync.lua
 GuildIDSync.xml
 GuildIDSyncUI.lua

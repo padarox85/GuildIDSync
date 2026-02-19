@@ -32,7 +32,7 @@ local GIDLDB = LibStub("LibDataBroker-1.1"):NewDataObject("GuildIDMinimap", {
     OnClick = function() GID:Toggle() end,
     OnTooltipShow = function(tt)
         tt:AddLine("GuildIDSync")
-        tt:AddLine("|cffffff00Klick|r um GuildIDSync zu öffnen / zu verstecken.")
+        tt:AddLine(GID_L["UI_MINIMAP_TOOLTIP_CLICK"])
     end,
 })
 local icon = LibStub("LibDBIcon-1.0")

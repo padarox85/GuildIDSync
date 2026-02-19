@@ -1,6 +1,6 @@
 local select, ipairs, mfloor, mmax, mmin = select, pairs, math.floor, math.max, math.min
 
-GID = {};
+GID = GID or {};
 GID.fully_loaded = false;
 GID.default_options = {
 
@@ -15,40 +15,97 @@ GID.default_options = {
 	frameH = 600,
 };
 
+-- Expansions-Erkennung
+local _, _, _, interface = GetBuildInfo()
+GID.isWotLK = (interface >= 30000 and interface < 40000)
+GID.isTBC = (interface >= 20000 and interface < 30000)
+
 -- HEROICS
 GID.instances = {};
-GID.instances["Burg Utgarde"] = true
-GID.instances["Turm Utgarde"] = true
-GID.instances["Der Nexus"] = true
-GID.instances["Das Oculus"] = true
-GID.instances["Azjol-Nerub"] = true
-GID.instances["Ahn'kahet: Das alte Königreich"] = true
-GID.instances["Feste Drak'Tharon"] = true
-GID.instances["Die Violette Festung"] = true
-GID.instances["Gundrak"] = true
-GID.instances["Hallen des Steins"] = true
-GID.instances["Hallen der Blitze"] = true
-GID.instances["Das Ausmerzen von Stratholme"] = true
-GID.instances["Prüfung des Champions"] = false
-GID.instances["Die Seelenschmiede"] = false
-GID.instances["Grube von Saron"] = false
-GID.instances["Hallen der Reflexion"] = false
+if GID.isTBC then
+	GID.instances["Höllenfeuerbollwerk"] = true
+	GID.instances["Der Blutkessel"] = true
+	GID.instances["Die Zerschmetterten Hallen"] = true
+	GID.instances["Die Sklavenunterkünfte"] = true
+	GID.instances["Der Tiefensumpf"] = true
+	GID.instances["Die Dampfkammer"] = true
+	GID.instances["Die Managruft"] = true
+	GID.instances["Auchenai-Krypta"] = true
+	GID.instances["Sethekkhallen"] = true
+	GID.instances["Schattenlabyrinth"] = true
+	GID.instances["Vorgebirge des Alten Hügellands"] = true
+	GID.instances["Der Schwarze Morast"] = true
+	GID.instances["Die Botanika"] = true
+	GID.instances["Die Mechanar"] = true
+	GID.instances["Die Arkatraz"] = true
+	GID.instances["Terrasse der Magister"] = true
+elseif GID.isWotLK then
+	GID.instances["Burg Utgarde"] = true
+	GID.instances["Turm Utgarde"] = true
+	GID.instances["Der Nexus"] = true
+	GID.instances["Das Oculus"] = true
+	GID.instances["Azjol-Nerub"] = true
+	GID.instances["Ahn'kahet: Das alte Königreich"] = true
+	GID.instances["Feste Drak'Tharon"] = true
+	GID.instances["Die Violette Festung"] = true
+	GID.instances["Gundrak"] = true
+	GID.instances["Hallen des Steins"] = true
+	GID.instances["Hallen der Blitze"] = true
+	GID.instances["Das Ausmerzen von Stratholme"] = true
+	GID.instances["Prüfung des Champions"] = false
+	GID.instances["Die Seelenschmiede"] = false
+	GID.instances["Grube von Saron"] = false
+	GID.instances["Hallen der Reflexion"] = false
+end
+
 -- RAIDS
 GID.raids = {}
-GID.raids["Archavons Kammer"] = true
-GID.raids["Das Obsidiansanktum"] = true
-GID.raids["Naxxramas"] = true
-GID.raids["Das Auge der Ewigkeit"] = true
-GID.raids["Ulduar"] = false
-GID.raids["Prüfung des Kreuzfahrers"] = false
-GID.raids["Eiskronenzitadelle"] = false
-GID.raids["Das Rubinsanktum"] = false
+if GID.isTBC then
+	GID.raids["Karazhan"] = true
+	GID.raids["Zul'Aman"] = true
+	GID.raids["Gruuls Unterschlupf"] = true
+	GID.raids["Magtheridons Kammer"] = true
+	GID.raids["Höhle des Schlangenschreins"] = true
+	GID.raids["Festung der Stürme"] = true
+	GID.raids["Hyjal"] = true
+	GID.raids["Der Schwarze Tempel"] = true
+	GID.raids["Sonnenbrunnenplateau"] = true
+elseif GID.isWotLK then
+	GID.raids["Archavons Kammer"] = true
+	GID.raids["Das Obsidiansanktum"] = true
+	GID.raids["Naxxramas"] = true
+	GID.raids["Das Auge der Ewigkeit"] = true
+	GID.raids["Ulduar"] = false
+	GID.raids["Prüfung des Kreuzfahrers"] = false
+	GID.raids["Eiskronenzitadelle"] = false
+	GID.raids["Das Rubinsanktum"] = false
+end
+
+-- PVP QUESTS
+GID.pvpQuests = {
+	{ name = GID_L["PVP_BG_DAILY"], ids = { 
+		-- TBC
+		11335, 11336, 11337, 11338, 11339, 11340, 11341, 11342, 11499, 11500,
+		-- WotLK (Call to Arms)
+		11335, 11336, 11337, 11338, 11339, 11340, 11341, 11342, 11499, 11500, -- Repeat IDs from TBC often used
+		13442, 13443, 13444, 13445, 13446, 13447, 13448, 13449, 13450, -- Newer WotLK IDs
+	} },
+	{ name = GID_L["PVP_HELLFIRE"], ids = { 9399, 10106 } }, -- Hellfire Fortifications (H/A)
+	{ name = GID_L["PVP_ZANGAR"], ids = { 10110, 10111 } }, -- Twin Spire Blessings (H/A)
+	{ name = GID_L["PVP_TEROKKAR"], ids = { 10090, 10091 } }, -- Spirits of Auchindoun (A/H)
+	{ name = GID_L["PVP_NAGRAND"], ids = { 10107, 10108 } }, -- Halaa (A/H)
+}
+
+-- Add WotLK specific PvP quests
+if GID.isWotLK then
+	table.insert(GID.pvpQuests, { name = GID_L["PVP_WINTERGRASP"], ids = { 13177, 13178, 13179, 13180, 13181, 13222, 13223 } })
+end
 
 function GID:MenuListItems(Items, difficulty)
 	local i = 0
 	for instance_name, active in pairs(Items) do
 		local cb = CreateFrame("Button", "InstanceCheckBox"..i, LeftMenu,"OptionsListButtonTemplate")
-		local text = cb:CreateFontString(cb, "ARTWORK", "GameFontNormal")
+		local text = cb:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 		text:SetText(instance_name)
 		text:SetPoint("LEFT", "InstanceCheckBox"..i, 0, 0)
 		if i == 0 then
