@@ -1,7 +1,7 @@
 -- Konstanten
-GID_PREFIX = "GID";
+GS_PREFIX = "GS";
 ADDON_NAME = "GuildSync";
-GID_VERSION = "1.0.3";
+GS_VERSION = "2.0.4";
 CHAR = {}
 CHAR.NAME, CHAR.REALM = UnitName("player")
 CHAR.LEVEL = UnitLevel("player")
@@ -9,7 +9,7 @@ LAST_UPDATE = nil
 
 -- User Variables
 MYIDS = {}
-GID = {}
+GS = {}
 
 
 -- imports
@@ -17,12 +17,12 @@ LibDeflate = LibStub:GetLibrary("LibDeflate")
 AceSerializer = LibStub("AceSerializer-3.0")
 
 --init Frames
-MainFrame = CreateFrame("Frame", "GID_GUI", UIParent, "ButtonFrameTemplate")
+MainFrame = CreateFrame("Frame", "GS_GUI", UIParent, "ButtonFrameTemplate")
 LeftMenu = CreateFrame("Frame", "LeftMenu", MainFrame, "BackdropTemplate")
 GuildIDContainer = CreateFrame("Frame", "GuildIDContainer", MainFrame, "BackdropTemplate")
 
 
-function GID:InitMinimap()
+function GS:InitMinimap()
     -- Migrate old SavedVariables if present
     if _G.GuildSyncDB == nil and _G.GuildIDSyncDB ~= nil then
         _G.GuildSyncDB = _G.GuildIDSyncDB
@@ -64,7 +64,7 @@ function GID:InitMinimap()
     button:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         GameTooltip:AddLine("GuildSync")
-        GameTooltip:AddLine(GID_L["UI_MINIMAP_TOOLTIP_CLICK"], 1, 1, 1)
+        GameTooltip:AddLine(GS_L["UI_MINIMAP_TOOLTIP_CLICK"], 1, 1, 1)
         GameTooltip:Show()
     end)
     button:SetScript("OnLeave", function(self)
@@ -104,7 +104,7 @@ function GID:InitMinimap()
     end)
 
     button:SetScript("OnClick", function(self)
-        GID:Toggle()
+        GS:Toggle()
     end)
 
     UpdatePosition()

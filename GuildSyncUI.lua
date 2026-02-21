@@ -27,44 +27,44 @@ if MainFrame.TitleText then MainFrame.TitleText:SetText("GuildSync") end
 if MainFrame.portrait then MainFrame.portrait:SetTexture("Interface\\AddOns\\GuildSync\\GuildSync.png") end
 
 -- Tab System
-GID.currentTab = 1
-local tab1 = CreateFrame("Button", "GID_GUITab1", MainFrame, "CharacterFrameTabButtonTemplate")
+GS.currentTab = 1
+local tab1 = CreateFrame("Button", "GS_GUITab1", MainFrame, "CharacterFrameTabButtonTemplate")
 tab1:SetPoint("BOTTOMLEFT", MainFrame, "BOTTOMLEFT", 10, -8)
-tab1:SetText(GID_L["UI_TAB_LOCKOUTS"])
+tab1:SetText(GS_L["UI_TAB_LOCKOUTS"])
 tab1:SetID(1)
 
-local tab2 = CreateFrame("Button", "GID_GUITab2", MainFrame, "CharacterFrameTabButtonTemplate")
+local tab2 = CreateFrame("Button", "GS_GUITab2", MainFrame, "CharacterFrameTabButtonTemplate")
 tab2:SetPoint("LEFT", tab1, "RIGHT", -16, 0)
-tab2:SetText(GID_L["UI_TAB_LAYERING"])
+tab2:SetText(GS_L["UI_TAB_LAYERING"])
 tab2:SetID(2)
 
-local tab3 = CreateFrame("Button", "GID_GUITab3", MainFrame, "CharacterFrameTabButtonTemplate")
+local tab3 = CreateFrame("Button", "GS_GUITab3", MainFrame, "CharacterFrameTabButtonTemplate")
 tab3:SetPoint("LEFT", tab2, "RIGHT", -16, 0)
-tab3:SetText(GID_L["UI_TAB_SETTINGS"])
+tab3:SetText(GS_L["UI_TAB_SETTINGS"])
 tab3:SetID(3)
 
 local function Tab_OnClick(self)
     PanelTemplates_SetTab(MainFrame, self:GetID())
-    GID.currentTab = self:GetID()
-    if GID.currentTab == 1 then
+    GS.currentTab = self:GetID()
+    if GS.currentTab == 1 then
         DifficultyMenu:Show()
         LeftMenu:Show()
-        if GID.LayerFrame then GID.LayerFrame:Hide() end
-        if GID.SettingsFrame then GID.SettingsFrame:Hide() end
+        if GS.LayerFrame then GS.LayerFrame:Hide() end
+        if GS.SettingsFrame then GS.SettingsFrame:Hide() end
         GuildIDContainer:Show()
-    elseif GID.currentTab == 2 then
+    elseif GS.currentTab == 2 then
         DifficultyMenu:Hide()
         LeftMenu:Hide()
         GuildIDContainer:Hide()
-        if GID.SettingsFrame then GID.SettingsFrame:Hide() end
-        GID:ShowLayeringTab()
+        if GS.SettingsFrame then GS.SettingsFrame:Hide() end
+        GS:ShowLayeringTab()
         
         -- Auto Refresh if data is older than 5 minutes or no data at all
         local now = GetTime()
-        local lastQuery = GID.LayerLastQueryTime or 0
+        local lastQuery = GS.LayerLastQueryTime or 0
         local hasRecentData = false
-        if GID.LayerData then
-            for _, data in pairs(GID.LayerData) do
+        if GS.LayerData then
+            for _, data in pairs(GS.LayerData) do
                 if now - data.time < 300 then
                     hasRecentData = true
                     break
@@ -73,14 +73,14 @@ local function Tab_OnClick(self)
         end
 
         if not hasRecentData or (now - lastQuery > 300) then
-            GID:RefreshLayerData()
+            GS:RefreshLayerData()
         end
     else
         DifficultyMenu:Hide()
         LeftMenu:Hide()
         GuildIDContainer:Hide()
-        if GID.LayerFrame then GID.LayerFrame:Hide() end
-        GID:ShowSettingsTab()
+        if GS.LayerFrame then GS.LayerFrame:Hide() end
+        GS:ShowSettingsTab()
     end
 end
 
@@ -96,7 +96,7 @@ PanelTemplates_SetTab(MainFrame, 1)
 
 local dropDown = CreateFrame("Frame", "DifficultyMenu", MainFrame, "UIDropDownMenuTemplate")
 local dropDownText = dropDown:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-dropDownText:SetText(GID_L["UI_DIFFICULTY_CHOOSE"])
+dropDownText:SetText(GS_L["UI_DIFFICULTY_CHOOSE"])
 dropDownText:SetPoint("TOPLEFT", "DifficultyMenu", 40, 10)
 
 local function DifficultyMenu_OnClick(self, arg1, arg2, checked)
@@ -108,23 +108,23 @@ local function DifficultyMenu_OnClick(self, arg1, arg2, checked)
 	end
 
 	if arg1 == "Heroics" then
-		UIDropDownMenu_SetText(dropDown, GID_L["UI_HEROICS"])
+		UIDropDownMenu_SetText(dropDown, GS_L["UI_HEROICS"])
 		LeftMenu:HideAllItems()
-		GID:MenuListItems(GID.instances, arg1)
+		GS:MenuListItems(GS.instances, arg1)
 	elseif arg1 == "10 Spieler" then
-		UIDropDownMenu_SetText(dropDown, GID_L["UI_RAID10"])
+		UIDropDownMenu_SetText(dropDown, GS_L["UI_RAID10"])
 		LeftMenu:HideAllItems()
-		GID:MenuListItems(GID.raids, arg1)
+		GS:MenuListItems(GS.raids, arg1)
 	elseif arg1 == "25 Spieler" then
-		UIDropDownMenu_SetText(dropDown, GID_L["UI_RAID25"])
+		UIDropDownMenu_SetText(dropDown, GS_L["UI_RAID25"])
 		LeftMenu:HideAllItems()
-		GID:MenuListItems(GID.raids, arg1)
+		GS:MenuListItems(GS.raids, arg1)
 	elseif arg1 == "PvP" then
-		UIDropDownMenu_SetText(dropDown, GID_L["UI_PVP"])
+		UIDropDownMenu_SetText(dropDown, GS_L["UI_PVP"])
 		LeftMenu:HideAllItems()
 		local pvpData = {}
-		for _, q in ipairs(GID.pvpQuests) do pvpData[q.name] = true end
-		GID:MenuListItems(pvpData, arg1)
+		for _, q in ipairs(GS.pvpQuests) do pvpData[q.name] = true end
+		GS:MenuListItems(pvpData, arg1)
 	end
 end
 
@@ -132,13 +132,13 @@ function DifficultyMenu_Menu(frame, level, menuList)
 	local info = UIDropDownMenu_CreateInfo()
 	info.func = DifficultyMenu_OnClick
 	info.notCheckable = true
-	info.text, info.arg1, info.value = GID_L["UI_HEROICS"], "Heroics", GID_L["UI_HEROICS"]
+	info.text, info.arg1, info.value = GS_L["UI_HEROICS"], "Heroics", GS_L["UI_HEROICS"]
 	UIDropDownMenu_AddButton(info)
-	info.text, info.arg1, info.value = GID_L["UI_RAID10"], "10 Spieler", GID_L["UI_RAID10"]
+	info.text, info.arg1, info.value = GS_L["UI_RAID10"], "10 Spieler", GS_L["UI_RAID10"]
 	UIDropDownMenu_AddButton(info)
-	info.text, info.arg1, info.value = GID_L["UI_RAID25"], "25 Spieler", GID_L["UI_RAID25"]
+	info.text, info.arg1, info.value = GS_L["UI_RAID25"], "25 Spieler", GS_L["UI_RAID25"]
 	UIDropDownMenu_AddButton(info)
-	info.text, info.arg1, info.value = GID_L["UI_PVP"], "PvP", GID_L["UI_PVP"]
+	info.text, info.arg1, info.value = GS_L["UI_PVP"], "PvP", GS_L["UI_PVP"]
 	UIDropDownMenu_AddButton(info)
 end
 
@@ -168,7 +168,7 @@ GuildIDContainer:ApplyBackdrop()
 GuildIDContainer:SetPoint("TOPLEFT", MainFrame.Inset or MainFrame, "TOPLEFT", 240, -10)
 GuildIDContainer:SetSize(560,510)
 
-function GID:ShowPlayerData(actual_difficulty, actual_instance)
+function GS:ShowPlayerData(actual_difficulty, actual_instance)
 	-- Zuerst alle alten Einträge im Container löschen (Sicherheitshalber nochmal)
 	for _, child in ipairs({GuildIDContainer:GetChildren()}) do
 		child:Hide()
@@ -177,19 +177,19 @@ function GID:ShowPlayerData(actual_difficulty, actual_instance)
 
 	if not GuildIDs or next(GuildIDs) == nil then
 		local noData = GuildIDContainer:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-		noData:SetText(GID_L["UI_NO_DATA"])
+		noData:SetText(GS_L["UI_NO_DATA"])
 		noData:SetPoint("CENTER", GuildIDContainer, 0, 0)
 		return
 	end
 
 	-- Header Erstellen
 	local headers = {
-		{name = GID_L["UI_LOCKOUT_COLUMN_NAME"], width = 120},
-		{name = GID_L["UI_LOCKOUT_COLUMN_LEVEL"], width = 40},
-		{name = GID_L["UI_LOCKOUT_COLUMN_ID"], width = 70},
-		{name = GID_L["UI_LOCKOUT_COLUMN_DATE"], width = 130},
-		{name = GID_L["UI_LOCKOUT_COLUMN_WHISPER"], width = 80},
-		{name = GID_L["UI_LOCKOUT_COLUMN_INVITE"], width = 80},
+		{name = GS_L["UI_LOCKOUT_COLUMN_NAME"], width = 120},
+		{name = GS_L["UI_LOCKOUT_COLUMN_LEVEL"], width = 40},
+		{name = GS_L["UI_LOCKOUT_COLUMN_ID"], width = 70},
+		{name = GS_L["UI_LOCKOUT_COLUMN_DATE"], width = 130},
+		{name = GS_L["UI_LOCKOUT_COLUMN_WHISPER"], width = 80},
+		{name = GS_L["UI_LOCKOUT_COLUMN_INVITE"], width = 80},
 	}
 	
 	local currentX = 20
@@ -216,9 +216,9 @@ function GID:ShowPlayerData(actual_difficulty, actual_instance)
 		
 		-- Filter basierend auf Expansion Level
 		local isLevelMatch = false
-		if GID.isWotLK and player_data.Level and player_data.Level >= 70 then
+		if GS.isWotLK and player_data.Level and player_data.Level >= 70 then
 			isLevelMatch = true
-		elseif GID.isTBC and player_data.Level and player_data.Level >= 60 then
+		elseif GS.isTBC and player_data.Level and player_data.Level >= 60 then
 			isLevelMatch = true
 		end
 
@@ -249,26 +249,26 @@ function GID:ShowPlayerData(actual_difficulty, actual_instance)
 			CharacterLockedUntil:SetJustifyH("LEFT")
 
 			-- Farbe für Level unter Max
-			if (GID.isWotLK and player_data.Level and player_data.Level < 80) or (GID.isTBC and player_data.Level and player_data.Level < 70) then
+			if (GS.isWotLK and player_data.Level and player_data.Level < 80) or (GS.isTBC and player_data.Level and player_data.Level < 70) then
 				CharacterLevel:SetTextColor(1, 0.5, 0, 1) -- Orange für fast max
-				if player_data.Level < 70 and GID.isWotLK then CharacterLevel:SetTextColor(1,0,0,1) end
-				if player_data.Level < 60 and GID.isTBC then CharacterLevel:SetTextColor(1,0,0,1) end
+				if player_data.Level < 70 and GS.isWotLK then CharacterLevel:SetTextColor(1,0,0,1) end
+				if player_data.Level < 60 and GS.isTBC then CharacterLevel:SetTextColor(1,0,0,1) end
 			end
 
 			local instance_locked = false
-			local status_text = GID_L["UI_STATUS_OPEN"]
+			local status_text = GS_L["UI_STATUS_OPEN"]
 			local date_text = ""
 
 			if actual_difficulty == "PvP" then
 				if player_data.PvP and player_data.PvP[actual_instance] then
 					if player_data.PvP[actual_instance].completed then
 						instance_locked = true
-						status_text = GID_L["UI_STATUS_COMPLETED"]
+						status_text = GS_L["UI_STATUS_COMPLETED"]
 					else
-						status_text = GID_L["UI_STATUS_OPEN"]
+						status_text = GS_L["UI_STATUS_OPEN"]
 					end
 				else
-					status_text = GID_L["UI_STATUS_UNKNOWN"]
+					status_text = GS_L["UI_STATUS_UNKNOWN"]
 				end
 			elseif player_data.IDs then
 				for difficulty, instances in pairs(player_data.IDs) do
@@ -301,7 +301,7 @@ function GID:ShowPlayerData(actual_difficulty, actual_instance)
 			local whisperBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
 			whisperBtn:SetSize(75, 20)
 			whisperBtn:SetPoint("LEFT", row, "LEFT", 380, 0)
-			whisperBtn:SetText(GID_L["UI_LOCKOUT_COLUMN_WHISPER"])
+			whisperBtn:SetText(GS_L["UI_LOCKOUT_COLUMN_WHISPER"])
 			whisperBtn:SetScript("OnClick", function()
 				ChatFrame_OpenChat("/w " .. player_name .. " ", DEFAULT_CHAT_FRAME)
 			end)
@@ -310,7 +310,7 @@ function GID:ShowPlayerData(actual_difficulty, actual_instance)
 			local inviteBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
 			inviteBtn:SetSize(75, 20)
 			inviteBtn:SetPoint("LEFT", row, "LEFT", 460, 0)
-			inviteBtn:SetText(GID_L["UI_LOCKOUT_COLUMN_INVITE"])
+			inviteBtn:SetText(GS_L["UI_LOCKOUT_COLUMN_INVITE"])
 			inviteBtn:SetScript("OnClick", function()
 				if C_PartyInfo and C_PartyInfo.InviteUnit then
 					C_PartyInfo.InviteUnit(player_name)
@@ -325,80 +325,80 @@ function GID:ShowPlayerData(actual_difficulty, actual_instance)
 
 	if iter == 0 then
 		local noPlayers = GuildIDContainer:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-		noPlayers:SetText(GID_L["UI_NO_CHARACTERS"])
+		noPlayers:SetText(GS_L["UI_NO_CHARACTERS"])
 		noPlayers:SetPoint("CENTER", GuildIDContainer, 0, 0)
 	end
 end
 
-function GID:ShowLayeringTab()
-    if not GID.LayerFrame then
-        GID.LayerFrame = CreateFrame("Frame", "GID_LayerFrame", MainFrame, "BackdropTemplate")
-        GID.LayerFrame:SetPoint("TOPLEFT", MainFrame.Inset or MainFrame, "TOPLEFT", 10, -10)
-        GID.LayerFrame:SetSize(780, 510)
-        GID.LayerFrame.backdropInfo = GuildIDContainer.backdropInfo
-        GID.LayerFrame:ApplyBackdrop()
+function GS:ShowLayeringTab()
+    if not GS.LayerFrame then
+        GS.LayerFrame = CreateFrame("Frame", "GS_LayerFrame", MainFrame, "BackdropTemplate")
+        GS.LayerFrame:SetPoint("TOPLEFT", MainFrame.Inset or MainFrame, "TOPLEFT", 10, -10)
+        GS.LayerFrame:SetSize(780, 510)
+        GS.LayerFrame.backdropInfo = GuildIDContainer.backdropInfo
+        GS.LayerFrame:ApplyBackdrop()
         
         -- Header
         local headers = {
-            {name = GID_L["UI_LAYER_COLUMN_NAME"], width = 150},
-            {name = GID_L["UI_LAYER_COLUMN_LEVEL"], width = 50},
-            {name = GID_L["UI_LAYER_COLUMN_ZONE"], width = 250},
-            {name = GID_L["UI_LAYER_COLUMN_LAYER"], width = 100},
-            {name = GID_L["UI_LAYER_COLUMN_ACTION"], width = 150},
+            {name = GS_L["UI_LAYER_COLUMN_NAME"], width = 150},
+            {name = GS_L["UI_LAYER_COLUMN_LEVEL"], width = 50},
+            {name = GS_L["UI_LAYER_COLUMN_ZONE"], width = 250},
+            {name = GS_L["UI_LAYER_COLUMN_LAYER"], width = 100},
+            {name = GS_L["UI_LAYER_COLUMN_ACTION"], width = 150},
         }
         
         local currentX = 20
         for i, h in ipairs(headers) do
-            local fs = GID.LayerFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+            local fs = GS.LayerFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
             fs:SetText(h.name)
-            fs:SetPoint("TOPLEFT", GID.LayerFrame, "TOPLEFT", currentX, -20)
+            fs:SetPoint("TOPLEFT", GS.LayerFrame, "TOPLEFT", currentX, -20)
             currentX = currentX + h.width
         end
         
-        GID.LayerTableContent = CreateFrame("Frame", nil, GID.LayerFrame)
-        GID.LayerTableContent:SetPoint("TOPLEFT", GID.LayerFrame, "TOPLEFT", 0, -50)
-        GID.LayerTableContent:SetSize(770, 500)
+        GS.LayerTableContent = CreateFrame("Frame", nil, GS.LayerFrame)
+        GS.LayerTableContent:SetPoint("TOPLEFT", GS.LayerFrame, "TOPLEFT", 0, -50)
+        GS.LayerTableContent:SetSize(770, 500)
 
         -- Refresh Button
-        GID.LayerRefreshBtn = CreateFrame("Button", "GID_LayerRefreshBtn", GID.LayerFrame, "UIPanelButtonTemplate")
-        GID.LayerRefreshBtn:SetSize(120, 25)
-        GID.LayerRefreshBtn:SetPoint("TOPRIGHT", GID.LayerFrame, "TOPRIGHT", -10, 40)
-        GID.LayerRefreshBtn:SetText(GID_L["UI_LAYER_REFRESH"])
-        GID.LayerRefreshBtn:SetScript("OnClick", function()
-            GID:RefreshLayerData()
+        GS.LayerRefreshBtn = CreateFrame("Button", "GS_LayerRefreshBtn", GS.LayerFrame, "UIPanelButtonTemplate")
+        GS.LayerRefreshBtn:SetSize(120, 25)
+        GS.LayerRefreshBtn:SetPoint("TOPRIGHT", GS.LayerFrame, "TOPRIGHT", -10, 40)
+        GS.LayerRefreshBtn:SetText(GS_L["UI_LAYER_REFRESH"])
+        GS.LayerRefreshBtn:SetScript("OnClick", function()
+            GS:RefreshLayerData()
         end)
         
         -- Cooldown Text
-        GID.LayerCooldownFS = GID.LayerFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-        GID.LayerCooldownFS:SetPoint("RIGHT", GID.LayerRefreshBtn, "LEFT", -10, 0)
-        GID.LayerCooldownFS:Hide()
+        GS.LayerCooldownFS = GS.LayerFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+        GS.LayerCooldownFS:SetPoint("RIGHT", GS.LayerRefreshBtn, "LEFT", -10, 0)
+        GS.LayerCooldownFS:Hide()
 
         -- Current Layer Text (top-left, same height as refresh button)
-        if not GID.LayerCurrentFS then
-            GID.LayerCurrentFS = GID.LayerFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-            GID.LayerCurrentFS:SetPoint("TOPLEFT", GID.LayerFrame, "TOPLEFT", 50, 40)
+        if not GS.LayerCurrentFS then
+            GS.LayerCurrentFS = GS.LayerFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            GS.LayerCurrentFS:SetPoint("TOPLEFT", GS.LayerFrame, "TOPLEFT", 50, 40)
         end
-        GID.LayerCurrentFS:SetText(string.format(GID_L["UI_LAYER_CURRENT"], GID:GetLayer() or GID_L["UI_LAYER_UNKNOWN"]))
+        GS.LayerCurrentFS:SetText(string.format(GS_L["UI_LAYER_CURRENT"], GS:GetLayer() or GS_L["UI_LAYER_UNKNOWN"]))
 
         -- Recurring update for "Current Layer" text
-        GID.LayerFrame:SetScript("OnUpdate", function(self, elapsed)
+        GS.LayerFrame:SetScript("OnUpdate", function(self, elapsed)
             self.updateTimer = (self.updateTimer or 0) + elapsed
             if self.updateTimer >= 1 then
                 self.updateTimer = 0
-                if GID.LayerCurrentFS then
-                    GID.LayerCurrentFS:SetText(string.format(GID_L["UI_LAYER_CURRENT"], GID:GetLayer() or GID_L["UI_LAYER_UNKNOWN"]))
+                if GS.LayerCurrentFS then
+                    GS.LayerCurrentFS:SetText(string.format(GS_L["UI_LAYER_CURRENT"], GS:GetLayer() or GS_L["UI_LAYER_UNKNOWN"]))
                 end
             end
         end)
     end
     
-    GID.LayerFrame:Show()
-    GID:UpdateLayerTable()
+    GS.LayerFrame:Show()
+    GS:UpdateLayerTable()
 end
 
-function GID:RefreshLayerData()
+function GS:RefreshLayerData()
     local now = GetTime()
-    local lastQuery = GID.LayerLastQueryTime or 0
+    local lastQuery = GS.LayerLastQueryTime or 0
     local cooldown = 30
     
     if now - lastQuery < cooldown then
@@ -406,45 +406,45 @@ function GID:RefreshLayerData()
         return
     end
 
-    if not GID:GetLayer() then
+    if not GS:GetLayer() then
         -- Layer unknown, don't send query
-        GID:UpdateLayerTable()
+        GS:UpdateLayerTable()
         return
     end
     
-    GID.LayerLastQueryTime = now
-    GID:send({type = "LAYER_QUERY"})
-    GID:msg(GID_L["UI_LAYER_QUERY_SENT"])
+    GS.LayerLastQueryTime = now
+    GS:send({type = "LAYER_QUERY"})
+    GS:msg(GS_L["UI_LAYER_QUERY_SENT"])
     
     -- Update UI to show loading immediately
-    GID:UpdateLayerTable()
+    GS:UpdateLayerTable()
     
     -- Schedule a check in 30 seconds to show error if no data arrived
     C_Timer.After(cooldown + 0.5, function()
-        if GID.LayerFrame and GID.LayerFrame:IsVisible() and GID.currentTab == 2 then
-            GID:UpdateLayerTable()
+        if GS.LayerFrame and GS.LayerFrame:IsVisible() and GS.currentTab == 2 then
+            GS:UpdateLayerTable()
         end
     end)
     
     -- Update Button State
-    if GID.LayerRefreshBtn then
-        GID.LayerRefreshBtn:Disable()
+    if GS.LayerRefreshBtn then
+        GS.LayerRefreshBtn:Disable()
         C_Timer.After(cooldown, function()
-            if GID.LayerRefreshBtn then GID.LayerRefreshBtn:Enable() end
-            if GID.LayerCooldownFS then GID.LayerCooldownFS:Hide() end
+            if GS.LayerRefreshBtn then GS.LayerRefreshBtn:Enable() end
+            if GS.LayerCooldownFS then GS.LayerCooldownFS:Hide() end
         end)
         
         -- Cooldown Countdown
-        if GID.LayerCooldownFS then
-            GID.LayerCooldownFS:Show()
+        if GS.LayerCooldownFS then
+            GS.LayerCooldownFS:Show()
             local remaining = cooldown
             local function updateCooldown()
-                if remaining > 0 and GID.LayerFrame and GID.LayerFrame:IsVisible() then
-                    GID.LayerCooldownFS:SetText(string.format(GID_L["UI_LAYER_COOLDOWN"], remaining))
+                if remaining > 0 and GS.LayerFrame and GS.LayerFrame:IsVisible() then
+                    GS.LayerCooldownFS:SetText(string.format(GS_L["UI_LAYER_COOLDOWN"], remaining))
                     remaining = remaining - 1
                     C_Timer.After(1, updateCooldown)
                 else
-                    if GID.LayerCooldownFS then GID.LayerCooldownFS:Hide() end
+                    if GS.LayerCooldownFS then GS.LayerCooldownFS:Hide() end
                 end
             end
             updateCooldown()
@@ -452,14 +452,14 @@ function GID:RefreshLayerData()
     end
 end
 
-function GID:UpdateLayerTable()
-    if not GID.LayerTableContent then return end
-    if GID.LayerCurrentFS then
-        GID.LayerCurrentFS:SetText(string.format(GID_L["UI_LAYER_CURRENT"], GID:GetLayer() or GID_L["UI_LAYER_UNKNOWN"]))
+function GS:UpdateLayerTable()
+    if not GS.LayerTableContent then return end
+    if GS.LayerCurrentFS then
+        GS.LayerCurrentFS:SetText(string.format(GS_L["UI_LAYER_CURRENT"], GS:GetLayer() or GS_L["UI_LAYER_UNKNOWN"]))
     end
     
     -- Vorherige Inhalte löschen (Frames und FontStrings)
-    for _, child in ipairs({GID.LayerTableContent:GetChildren()}) do
+    for _, child in ipairs({GS.LayerTableContent:GetChildren()}) do
         child:Hide()
         child:SetParent(nil)
     end
@@ -467,16 +467,16 @@ function GID:UpdateLayerTable()
     -- FontStrings, die direkt am Frame hängen, müssen ebenfalls gelöscht oder versteckt werden
     -- Da wir CreateFontString nutzen, können wir diese nicht einfach via GetChildren finden.
     -- Besser: Wir nutzen einen permanenten FontString für Statusmeldungen.
-    if not GID.LayerStatusFS then
-        GID.LayerStatusFS = GID.LayerTableContent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-        GID.LayerStatusFS:SetPoint("CENTER", GID.LayerTableContent, 0, 0)
+    if not GS.LayerStatusFS then
+        GS.LayerStatusFS = GS.LayerTableContent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+        GS.LayerStatusFS:SetPoint("CENTER", GS.LayerTableContent, 0, 0)
     end
-    GID.LayerStatusFS:Hide()
+    GS.LayerStatusFS:Hide()
     
     local now = GetTime()
     local sortedPlayers = {}
-    if GID.LayerData then
-        for name, data in pairs(GID.LayerData) do
+    if GS.LayerData then
+        for name, data in pairs(GS.LayerData) do
             -- Nur Daten der letzten 5 Minuten anzeigen
             if now - data.time < 300 then
                 table.insert(sortedPlayers, {name = name, data = data})
@@ -485,17 +485,17 @@ function GID:UpdateLayerTable()
     end
     
     if #sortedPlayers == 0 then
-        local msg = GID_L["UI_LAYER_LOADING"]
-        local lastQuery = GID.LayerLastQueryTime or 0
+        local msg = GS_L["UI_LAYER_LOADING"]
+        local lastQuery = GS.LayerLastQueryTime or 0
         
-        if not GID:GetLayer() then
-            msg = GID_L["UI_LAYER_UNKNOWN_PROMPT"]
+        if not GS:GetLayer() then
+            msg = GS_L["UI_LAYER_UNKNOWN_PROMPT"]
         elseif GetTime() - lastQuery > 30 then
-            msg = GID_L["UI_LAYER_NO_DATA"]
+            msg = GS_L["UI_LAYER_NO_DATA"]
         end
         
-        GID.LayerStatusFS:SetText(msg)
-        GID.LayerStatusFS:Show()
+        GS.LayerStatusFS:SetText(msg)
+        GS.LayerStatusFS:Show()
         return
     end
 
@@ -503,9 +503,9 @@ function GID:UpdateLayerTable()
     
     local rowHeight = 25
     for i, p in ipairs(sortedPlayers) do
-        local row = CreateFrame("Frame", nil, GID.LayerTableContent)
+        local row = CreateFrame("Frame", nil, GS.LayerTableContent)
         row:SetSize(770, rowHeight)
-        row:SetPoint("TOPLEFT", GID.LayerTableContent, "TOPLEFT", 0, -(i-1) * rowHeight)
+        row:SetPoint("TOPLEFT", GS.LayerTableContent, "TOPLEFT", 0, -(i-1) * rowHeight)
         
         local nameFS = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         nameFS:SetText(p.name)
@@ -530,7 +530,7 @@ function GID:UpdateLayerTable()
         layerFS:SetWidth(100)
         
         local isSameLayer = false
-        local myLayer = GID:GetLayer()
+        local myLayer = GS:GetLayer()
         if myLayer and p.data.layer and tostring(p.data.layer) == tostring(myLayer) then
             isSameLayer = true
         end
@@ -539,43 +539,43 @@ function GID:UpdateLayerTable()
             local btn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
             btn:SetSize(120, 20)
             btn:SetPoint("LEFT", row, "LEFT", 570, 0)
-            btn:SetText(GID_L["UI_LAYER_INVITE"])
+            btn:SetText(GS_L["UI_LAYER_INVITE"])
             
             if isSameLayer then
                 btn:Disable()
             end
 
             btn:SetScript("OnClick", function()
-                GID.ExpectedInviteSender = p.name
-                GID.ExpectedInviteTime = GetTime()
-                GID:send({type = "LAYER_INVITE_REQUEST", target = p.name})
-                GID:msg(string.format(GID_L["UI_LAYER_INVITE_SENT"], p.name))
+                GS.ExpectedInviteSender = p.name
+                GS.ExpectedInviteTime = GetTime()
+                GS:send({type = "LAYER_INVITE_REQUEST", target = p.name})
+                GS:msg(string.format(GS_L["UI_LAYER_INVITE_SENT"], p.name))
             end)
         else
             local inGrpFS = row:CreateFontString(nil, "ARTWORK", "GameFontDisable")
-            inGrpFS:SetText(GID_L["UI_LAYER_IN_GROUP"])
+            inGrpFS:SetText(GS_L["UI_LAYER_IN_GROUP"])
             inGrpFS:SetPoint("LEFT", row, "LEFT", 570, 0)
             inGrpFS:SetWidth(120)
         end
     end
 end
 
-function GID:ShowSettingsTab()
-    if not GID.SettingsFrame then
-        GID.SettingsFrame = CreateFrame("Frame", "GID_SettingsFrame", MainFrame, "BackdropTemplate")
-        GID.SettingsFrame:SetPoint("TOPLEFT", MainFrame.Inset or MainFrame, "TOPLEFT", 10, -10)
-        GID.SettingsFrame:SetSize(780, 510)
-        GID.SettingsFrame.backdropInfo = GuildIDContainer.backdropInfo
-        GID.SettingsFrame:ApplyBackdrop()
+function GS:ShowSettingsTab()
+    if not GS.SettingsFrame then
+        GS.SettingsFrame = CreateFrame("Frame", "GS_SettingsFrame", MainFrame, "BackdropTemplate")
+        GS.SettingsFrame:SetPoint("TOPLEFT", MainFrame.Inset or MainFrame, "TOPLEFT", 10, -10)
+        GS.SettingsFrame:SetSize(780, 510)
+        GS.SettingsFrame.backdropInfo = GuildIDContainer.backdropInfo
+        GS.SettingsFrame:ApplyBackdrop()
 
-        local title = GID.SettingsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+        local title = GS.SettingsFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
         title:SetPoint("TOPLEFT", 20, -20)
-        title:SetText(GID_L["UI_TAB_SETTINGS"])
+        title:SetText(GS_L["UI_TAB_SETTINGS"])
 
         -- Auto-invite Checkbox
-        local autoInviteCb = CreateFrame("CheckButton", "GID_Settings_AutoInviteCB", GID.SettingsFrame, "ChatConfigCheckButtonTemplate")
+        local autoInviteCb = CreateFrame("CheckButton", "GS_Settings_AutoInviteCB", GS.SettingsFrame, "ChatConfigCheckButtonTemplate")
         autoInviteCb:SetPoint("TOPLEFT", 20, -60)
-        _G[autoInviteCb:GetName() .. "Text"]:SetText(GID_L["UI_SETTINGS_AUTO_INVITE"])
+        _G[autoInviteCb:GetName() .. "Text"]:SetText(GS_L["UI_SETTINGS_AUTO_INVITE"])
         
         autoInviteCb:SetScript("OnShow", function(self)
             self:SetChecked(GuildSyncDB.settings and GuildSyncDB.settings.autoAcceptLayerInvite)
@@ -587,9 +587,9 @@ function GID:ShowSettingsTab()
         end)
 
         -- Hide Minimap Checkbox
-        local hideMinimapCb = CreateFrame("CheckButton", "GID_Settings_HideMinimapCB", GID.SettingsFrame, "ChatConfigCheckButtonTemplate")
+        local hideMinimapCb = CreateFrame("CheckButton", "GS_Settings_HideMinimapCB", GS.SettingsFrame, "ChatConfigCheckButtonTemplate")
         hideMinimapCb:SetPoint("TOPLEFT", 20, -100)
-        _G[hideMinimapCb:GetName() .. "Text"]:SetText(GID_L["UI_SETTINGS_HIDE_MINIMAP"])
+        _G[hideMinimapCb:GetName() .. "Text"]:SetText(GS_L["UI_SETTINGS_HIDE_MINIMAP"])
         
         hideMinimapCb:SetScript("OnShow", function(self)
             self:SetChecked(GuildSyncDB.minimap and GuildSyncDB.minimap.hide)
@@ -608,5 +608,5 @@ function GID:ShowSettingsTab()
         end)
     end
 
-    GID.SettingsFrame:Show()
+    GS.SettingsFrame:Show()
 end

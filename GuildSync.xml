@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
-	<Frame name="GID">
+	<Frame name="GS">
 		<Scripts>
 			<OnLoad>
 				self:RegisterEvent("CHAT_MSG_ADDON");
@@ -17,7 +17,7 @@
 				self:RegisterEvent("QUEST_TURNED_IN");
 			</OnLoad>
 			<OnEvent>
-				GID:onEvent(event, ...);
+				GS:onEvent(event, ...);
 			</OnEvent>
 		</Scripts>
 	</Frame>

@@ -1,5 +1,5 @@
 StaticPopupDialogs["GUILDSYNC_CONFIRM_LAYER_INVITE"] = {
-    text = GID_L["UI_LAYER_INVITE_CONFIRM_TEXT"],
+    text = GS_L["UI_LAYER_INVITE_CONFIRM_TEXT"],
     button1 = ACCEPT,
     button2 = CANCEL,
     OnAccept = function(self, data)
@@ -15,26 +15,29 @@ StaticPopupDialogs["GUILDSYNC_CONFIRM_LAYER_INVITE"] = {
     preferredIndex = 3,
 }
 
-function GID:init()
-   C_ChatInfo.RegisterAddonMessagePrefix(GID_PREFIX);
-   GID:msg(string.format(GID_L["MSG_LOADED"], ADDON_NAME, GID_VERSION))
+function GS:init()
+   C_ChatInfo.RegisterAddonMessagePrefix(GS_PREFIX);
+   GS:msg(string.format(GS_L["MSG_LOADED"], ADDON_NAME, GS_VERSION))
 
    SLASH_GS1 = '/gs'
    SlashCmdList["GS"] = function(msg)
-      GID:Toggle()
+      GS:Toggle()
    end
 end
 
 
-function GID:send(data)
+function GS:send(data)
    -- sende Update an Addon Chat channel (nicht sichtbar)
-   C_ChatInfo.SendAddonMessage(GID_PREFIX, GID:compress(data), "GUILD");
+   if type(data) == "table" then
+      data.v = GS_VERSION
+   end
+   C_ChatInfo.SendAddonMessage(GS_PREFIX, GS:compress(data), "GUILD");
 end
 
 
-function GID:showUI() GID:Toggle(); end
+function GS:showUI() GS:Toggle(); end
 
-function GID:getTime()
+function GS:getTime()
    local inInstance, instanceType = IsInInstance()
    if not inInstance then
       return GetServerTime()
@@ -43,7 +46,7 @@ function GID:getTime()
    end
 end
 
-function GID:Toggle()
+function GS:Toggle()
    if MainFrame:IsVisible() then
       MainFrame:Hide()
    else
@@ -51,33 +54,33 @@ function GID:Toggle()
    end
 end
 
--- build the users id Table
-function GID:builtIDs(myInstances)
-   local ids = {}
-   for instanceID=1, myInstances, 1
-   do
-      local instanceName, instanceID, instanceReset, instanceDifficulty, instanceLocked, instanceExtended, instanceIDMostSig, instanceIsRaid, instanceMaxPlayers, instanceDifficultyName, instanceNumEncounters, instanceEncounterProgress, instanceExtendDisabled = GetSavedInstanceInfo(instanceID)
-      -- TBC Anniversary 2.5.5 Fix: Falls instanceDifficultyName leer ist (kommt vor), setzen wir einen Standardwert
-      if not instanceDifficultyName or instanceDifficultyName == "" then
-          if instanceIsRaid then
-              instanceDifficultyName = "Raid"
-          else
-              instanceDifficultyName = "Dungeon"
-          end
+   -- build the users id Table
+   function GS:builtIDs(myInstances)
+      local ids = {}
+      for i=1, myInstances, 1
+      do
+         local instanceName, instanceID, instanceReset, instanceDifficulty, instanceLocked, instanceExtended, instanceIDMostSig, instanceIsRaid, instanceMaxPlayers, instanceDifficultyName, instanceNumEncounters, instanceEncounterProgress, instanceExtendDisabled = GetSavedInstanceInfo(i)
+         -- TBC Anniversary 2.5.5 Fix: Falls instanceDifficultyName leer ist (kommt vor), setzen wir einen Standardwert
+         if not instanceDifficultyName or instanceDifficultyName == "" then
+             if instanceIsRaid then
+                 instanceDifficultyName = "Raid"
+             else
+                 instanceDifficultyName = "Dungeon"
+             end
+         end
+         if ids[instanceDifficultyName] == nil then
+            ids[instanceDifficultyName] = {}
+         end
+         ids[instanceDifficultyName][instanceName] = {instanceReset = GetServerTime() + instanceReset, instanceID = instanceID, instanceLocked = instanceLocked}
       end
-      if ids[instanceDifficultyName] == nil then
-         ids[instanceDifficultyName] = {}
-      end
-      ids[instanceDifficultyName][instanceName] = {instanceReset = GetServerTime() + instanceReset, instanceID = instanceID, instanceLocked = instanceLocked}
-   end
-   return ids
+      return ids
    end
 
-   function GID:InitLayerScan()
-       GID.detectedLayers = GID_DetectedLayers
-       GID.lastKnownLayerID = nil
+   function GS:InitLayerScan()
+       GS.detectedLayers = GS_DetectedLayers
+       GS.lastKnownLayerID = nil
        
-       -- Wir nutzen denselben Frame GID, um Events zentral in onEvent zu verarbeiten.
+       -- Wir nutzen denselben Frame GS, um Events zentral in onEvent zu verarbeiten.
        -- Der extra Frame hier ist nicht nötig und könnte zu Konflikten führen,
        -- da er dieselben Events wie der Hauptframe registriert.
    end
@@ -95,52 +98,52 @@ function GID:builtIDs(myInstances)
        if not mapID then return false end
 
        local changed = false
-       if GID.lastKnownLayerID ~= instID then
+       if GS.lastKnownLayerID ~= instID then
            -- Only update lastKnownLayerID passively if we already had a layer.
            -- This satisfies the user's request to show "unknown" at the start
            -- until they manually target or mouseover an NPC.
-           if not isPassive or GID.lastKnownLayerID ~= nil then
-               GID.lastKnownLayerID = instID
+           if not isPassive or GS.lastKnownLayerID ~= nil then
+               GS.lastKnownLayerID = instID
                changed = true
            end
            
            -- Ensure table for current map exists
-           GID.detectedLayers[mapID] = GID.detectedLayers[mapID] or {}
+           GS.detectedLayers[mapID] = GS.detectedLayers[mapID] or {}
            
            -- neue ID ggf. in die bekannte Liste aufnehmen (Mapping immer aktualisieren)
            local found = false
-           for _, id in ipairs(GID.detectedLayers[mapID]) do
+           for _, id in ipairs(GS.detectedLayers[mapID]) do
                if id == instID then
                    found = true
                    break
                end
            end
            if not found then
-               table.insert(GID.detectedLayers[mapID], instID)
-               table.sort(GID.detectedLayers[mapID])
+               table.insert(GS.detectedLayers[mapID], instID)
+               table.sort(GS.detectedLayers[mapID])
                
                -- Share discovery with guild so everyone has same layer mapping
-               GID:send({type = "LAYER_MAP_UPDATE", mapID = mapID, layerID = instID})
+               GS:send({type = "LAYER_MAP_UPDATE", mapID = mapID, layerID = instID})
                changed = true
            end
            
            -- UI live aktualisieren, falls sichtbar und etwas sich geändert hat
-           if changed and MainFrame and MainFrame:IsVisible() and GID.currentTab == 2 then
-               GID:UpdateLayerTable()
+           if changed and MainFrame and MainFrame:IsVisible() and GS.currentTab == 2 then
+               GS:UpdateLayerTable()
            end
            return true
        end
        return false
    end
 
-   function GID:ScanLayer(event, unit)
+   function GS:ScanLayer(event, unit)
        local targetUnit = unit or "mouseover"
        if event == "PLAYER_TARGET_CHANGED" then targetUnit = "target" end
        local guid = UnitGUID(targetUnit)
        ParseAndRecordLayerFromGUID(guid, false) -- active scan
    end
 
-   function GID:GetLayer()
+   function GS:GetLayer()
        -- 0. Check NovaWorldBuffs integration if available
        if _G.NWB_CurrentLayer and _G.NWB_CurrentLayer > 0 then
            return tostring(_G.NWB_CurrentLayer)
@@ -150,11 +153,11 @@ function GID:builtIDs(myInstances)
        end
 
        -- 1. Unsere eigene NPC-basierte Heuristik (NPCs in der Zone scannen)
-       if GID.lastKnownLayerID ~= nil then
+       if GS.lastKnownLayerID ~= nil then
            local mapID = C_Map.GetBestMapForUnit("player")
-           if mapID and GID.detectedLayers[mapID] then
-               for i, id in ipairs(GID.detectedLayers[mapID]) do
-                   if id == GID.lastKnownLayerID then
+           if mapID and GS.detectedLayers[mapID] then
+               for i, id in ipairs(GS.detectedLayers[mapID]) do
+                   if id == GS.lastKnownLayerID then
                        return tostring(i)
                    end
                end
@@ -165,9 +168,9 @@ function GID:builtIDs(myInstances)
        return nil
    end
 
-   function GID:builtPvPQuests()
+   function GS:builtPvPQuests()
    local quests = {}
-   for _, pvpQuest in ipairs(GID.pvpQuests) do
+   for _, pvpQuest in ipairs(GS.pvpQuests) do
       local completed = false
       for _, questID in ipairs(pvpQuest.ids) do
          if C_QuestLog.IsQuestFlaggedCompleted(questID) then
@@ -180,50 +183,68 @@ function GID:builtIDs(myInstances)
    return quests
 end
 
-function GID:update()
-   MYIDS = GID:builtIDs(GetNumSavedInstances());
-   MYPVP = GID:builtPvPQuests();
-   if GID:getTime() ~= nil then
-      if GuildIDs == nil then
-         GuildIDs = {[CHAR.NAME] = {Level = CHAR.LEVEL, LastUpdated = GetServerTime(), IDs = MYIDS, PvP = MYPVP, rev = 1}};
-      elseif GuildIDs then
-         local currentRev = (GuildIDs[CHAR.NAME] and GuildIDs[CHAR.NAME].rev) or 0
-         GuildIDs[CHAR.NAME] = {LastUpdated = GID:getTime(), Level = CHAR.LEVEL, IDs = MYIDS, PvP = MYPVP, rev = currentRev + 1}
-      end
-      GID:msg(string.format(GID_L["MSG_PROFILE_UPDATED"], GetNumSavedInstances(), GuildIDs[CHAR.NAME].rev))
+function GS:update(forceSend)
+   MYIDS = GS:builtIDs(GetNumSavedInstances());
+   MYPVP = GS:builtPvPQuests();
+   if GS:getTime() ~= nil then
+      local currentRev = (GuildIDs[CHAR.NAME] and GuildIDs[CHAR.NAME].rev) or 0
+      local newData = {LastUpdated = GS:getTime(), Level = CHAR.LEVEL, IDs = MYIDS, PvP = MYPVP, rev = currentRev + 1}
       
-      -- Nach dem Update schicken wir Manifeste für unsere eigenen Buckets
-      local myBucket = GID:getBucket(CHAR.NAME)
-      C_Timer.After(math.random(1, 5), function() GID:sendManifest(myBucket) end)
+      -- Check for changes
+      local hasChanged = forceSend
+      if not hasChanged then
+          if not GuildIDs[CHAR.NAME] then
+              hasChanged = true
+          else
+              -- Compare IDs and PvP
+              local oldData = GuildIDs[CHAR.NAME]
+              if AceSerializer:Serialize(oldData.IDs) ~= AceSerializer:Serialize(newData.IDs) or
+                 AceSerializer:Serialize(oldData.PvP) ~= AceSerializer:Serialize(newData.PvP) then
+                  hasChanged = true
+              end
+          end
+      end
+
+      if hasChanged then
+          GuildIDs[CHAR.NAME] = newData
+          GS:msg(string.format(GS_L["MSG_PROFILE_UPDATED"], GetNumSavedInstances(), GuildIDs[CHAR.NAME].rev))
+          
+          -- Sende RECORD für sich selbst an alle
+          GS:send({
+              type = "RECORD",
+              name = CHAR.NAME,
+              data = GuildIDs[CHAR.NAME]
+          })
+      end
    else
-      GID:msg(GID_L["MSG_CANNOT_UPDATE_IN_INSTANCE"])
+      GS:msg(GS_L["MSG_CANNOT_UPDATE_IN_INSTANCE"])
    end
 end
 
-function GID:list_online_players()
-   for name, _ in pairs(GID:get_online_players()) do
-      GID:msg(name)
+function GS:list_online_players()
+   for name, _ in pairs(GS:get_online_players()) do
+      GS:msg(name)
    end
 end
 
-function GID:send_all()
+function GS:send_all()
    for key, values in pairs(GuildIDs) do
-      if not GID:check_player_is_online(key) then
-         GID:send({[key] = values})
+      if not GS:check_player_is_online(key) then
+         GS:send({[key] = values})
       end
    end
 end
 
-function GID:get_online_players()
+function GS:get_online_players()
    local online_players = {}
    GuildRoster();
    local numTotalMembers, numOnlineMaxLevelMembers, numOnlineMembers = GetNumGuildMembers();
    for player_index=1, numTotalMembers, 1 do
-      local name, rank, rankIndex, level, class, zone, note, officernote, online, status, classFileName, achievementPoints, achievementRank, isMobile, isSoREligible, standingID = GetGuildRosterInfo(player_index);
+      local name, rank, rankIndex, level, class, zone, note, officernote, online, status, classFileName, achievementPoints, achievementRank, isMobile, isSoREligible, standinGS = GetGuildRosterInfo(player_index);
       -- TBC Anniversary Compatibility: Falls GetGuildRosterInfo weniger Argumente zurückgibt (vor MoP gab es keine AchievementPoints etc.)
       -- Die wichtigsten Felder (name, online) sind aber immer an den ersten Stellen.
       if name then
-         local char_name = GID:string_split(name, "-")[1]
+         local char_name = GS:string_split(name, "-")[1]
          if online then
             online_players[char_name] = true
          end
@@ -232,23 +253,23 @@ function GID:get_online_players()
    return online_players
 end
 
-function GID:check_player_is_online(player_name)
-   if GID:Set_Contains(GID:get_online_players(), player_name) then
+function GS:check_player_is_online(player_name)
+   if GS:Set_Contains(GS:get_online_players(), player_name) then
       return true
    end
    return false
 end
 
-function GID:clear()
+function GS:clear()
    GuildIDs = nil
-   GID:msg(GID_L["MSG_DATA_CLEARED"])
+   GS:msg(GS_L["MSG_DATA_CLEARED"])
 end
 
-function GID:clean_ids()
+function GS:clean_ids()
    if GuildIDs ~= nil then
       local new_GuildIDs = {}
       for player_name, player_data in pairs(GuildIDs) do
-         if GID:check_valid_difficulty_for_player(player_name, "ALL") then
+         if GS:check_valid_difficulty_for_player(player_name, "ALL") then
             local new_player_data = {}
             for data_key, data_value in pairs(player_data) do
                if data_key == "LastUpdated" then
@@ -256,10 +277,10 @@ function GID:clean_ids()
                elseif data_key == "IDs" then
                   local new_difficulty = {}
                   for difficulty, instances in pairs(data_value) do
-                     if GID:check_valid_difficulty_for_player(player_name, difficulty) then
+                     if GS:check_valid_difficulty_for_player(player_name, difficulty) then
                         local new_instances = {}
                         for instanceName, instanceDetails in pairs(instances) do
-                           if instanceDetails.instanceReset > GID:getTime() then
+                           if instanceDetails.instanceReset > GS:getTime() then
                               new_instances[instanceName] = instanceDetails
                            end
                         end
@@ -276,13 +297,13 @@ function GID:clean_ids()
    end
 end
 
-function GID:check_valid_difficulty_for_player(player_name, instance_difficulty)
+function GS:check_valid_difficulty_for_player(player_name, instance_difficulty)
    local has_valid_difficulty = false
    if GuildIDs ~= nil then
       for difficulty, instances in pairs(GuildIDs[player_name].IDs) do
          if difficulty == instance_difficulty or difficulty == 'ALL' then
             for _, instance_details in pairs(instances) do
-               if instance_details.instanceReset > GID:getTime() then
+               if instance_details.instanceReset > GS:getTime() then
                   has_valid_difficulty = true
                end
             end
@@ -292,42 +313,42 @@ function GID:check_valid_difficulty_for_player(player_name, instance_difficulty)
    return has_valid_difficulty
 end
 
-function GID:list(data)
+function GS:list(data)
 -- print the users id Table into chat
-   GID:msg(GID_L["MSG_OWN_IDS_TITLE"])
+   GS:msg(GS_L["MSG_OWN_IDS_TITLE"])
    for difficulty, instances in pairs(data) do
-      GID:msg(difficulty .. ":", "cyan")
+      GS:msg(difficulty .. ":", "cyan")
       for instanceName, instanceDetails in pairs(instances) do
-         GID:msg("- " .. instanceName .. ":", "yellow")
+         GS:msg("- " .. instanceName .. ":", "yellow")
          for key, value in pairs(instanceDetails) do
             if key == "instanceReset" then
-               GID:msg("- - " .. string.format(GID_L["MSG_RESET"], date("%d.%m.%y %H:%M", value)))
+               GS:msg("- - " .. string.format(GS_L["MSG_RESET"], date("%d.%m.%y %H:%M", value)))
             else
-               GID:msg("- - "..key..": "..tostring(value))
+               GS:msg("- - "..key..": "..tostring(value))
             end
          end
       end
    end
 end
 
-function GID:list_all()
-   GID:msg(GID_L["MSG_ALL_IDS_TITLE"])
+function GS:list_all()
+   GS:msg(GS_L["MSG_ALL_IDS_TITLE"])
    -- print the users id Table into chat
       for player_name, player_data in pairs(GuildIDs) do
-         GID:msg(player_name..":", "red")
+         GS:msg(player_name..":", "red")
          for data_key, data_value in pairs(player_data) do
             if data_key == "LastUpdated" then
-               GID:msg("Last Update: "..date("%d.%m.%y %H:%M",data_value).. ":", "green")
+               GS:msg("Last Update: "..date("%d.%m.%y %H:%M",data_value).. ":", "green")
             elseif data_key == "IDs" then
                for difficulty, instances in pairs(data_value) do
-                  GID:msg(difficulty .. ":", "cyan")
+                  GS:msg(difficulty .. ":", "cyan")
                   for instanceName, instanceDetails in pairs(instances) do
-                     GID:msg("- " .. instanceName .. ":", "yellow")
+                     GS:msg("- " .. instanceName .. ":", "yellow")
                      for key, value in pairs(instanceDetails) do
                         if key == "instanceReset" then
-                           GID:msg("- - " .. string.format(GID_L["MSG_RESET"], date("%d.%m.%y %H:%M", value)))
+                           GS:msg("- - " .. string.format(GS_L["MSG_RESET"], date("%d.%m.%y %H:%M", value)))
                         else
-                           GID:msg("- - "..key..": "..tostring(value))
+                           GS:msg("- - "..key..": "..tostring(value))
                         end
                      end
                   end
@@ -343,7 +364,7 @@ function GID:list_all()
 
 local MANIFEST_BUCKETS = 8
 
-function GID:getBucket(name)
+function GS:getBucket(name)
     local hash = 0
     for i = 1, #name do
         hash = (hash * 31 + string.byte(name, i)) % 2^31
@@ -351,31 +372,53 @@ function GID:getBucket(name)
     return (hash % MANIFEST_BUCKETS) + 1
 end
 
-function GID:sendHello()
-    GID:send({type = "HELLO", version = GID_VERSION})
+function GS:sendHello()
+    GS:send({type = "HELLO", version = GS_VERSION})
 end
 
-function GID:sendManifest(bucket)
+function GS:sendManifest(bucket)
     local entries = {}
     for name, data in pairs(GuildIDs) do
-        if GID:getBucket(name) == bucket then
+        if GS:getBucket(name) == bucket then
             entries[name] = data.rev
         end
     end
-    GID:send({type = "MANIFEST", bucket = bucket, entries = entries})
+    GS:send({type = "MANIFEST", bucket = bucket, entries = entries})
 end
 
-function GID:handleIncomingMessage(data, sender)
+function GS:sendPull()
+    GS:send({type = "PULL"})
+end
+
+function GS:handleIncomingMessage(data, sender)
     if not data or not data.type then return end
     
-    local senderName = GID:string_split(sender, "-")[1]
+    -- Check for newer version
+    if data.v and data.v > GS_VERSION and not GS.updateNotified then
+        GS:msg(string.format(GS_L["MSG_NEW_VERSION_AVAILABLE"], ADDON_NAME, data.v), "yellow")
+        GS.updateNotified = true
+    end
+
+    local senderName = GS:string_split(sender, "-")[1]
     if senderName == CHAR.NAME then return end
 
-    if data.type == "HELLO" then
+    if data.type == "PULL" then
+        -- Jemand möchte alle Daten haben. Wir senden unseren eigenen Record.
+        if GuildIDs[CHAR.NAME] then
+            C_Timer.After(math.random(1, 10), function()
+                GS:send({
+                    type = "RECORD",
+                    name = CHAR.NAME,
+                    data = GuildIDs[CHAR.NAME]
+                })
+            end)
+        end
+
+    elseif data.type == "HELLO" then
         -- Wenn jemand online kommt, schicken wir ihm (verzögert) Manifeste für unsere Buckets
         for b = 1, MANIFEST_BUCKETS do
             C_Timer.After(math.random(5, 30) + (b * 2), function()
-                GID:sendManifest(b)
+                GS:sendManifest(b)
             end)
         end
     
@@ -401,7 +444,7 @@ function GID:handleIncomingMessage(data, sender)
                     table.insert(batch, needed[j])
                 end
                 C_Timer.After((i-1)/5 * 2, function()
-                    GID:send({type = "REQUEST", players = batch, bucket = data.bucket})
+                    GS:send({type = "REQUEST", players = batch, bucket = data.bucket})
                 end)
             end
         end
@@ -416,7 +459,7 @@ function GID:handleIncomingMessage(data, sender)
                 -- Verzögert, um Burst zu vermeiden
                 count = count + 1
                 C_Timer.After(math.random(0.1, 2) + (count * 0.2), function()
-                    GID:send({
+                    GS:send({
                         type = "RECORD",
                         name = name,
                         data = localData
@@ -431,28 +474,28 @@ function GID:handleIncomingMessage(data, sender)
         local remoteData = data.data
         if not GuildIDs[name] or (remoteData.rev or 0) > (GuildIDs[name].rev or 0) then
             GuildIDs[name] = remoteData
-            -- GID:msg("Received updated record for " .. name .. " (Rev: " .. (remoteData.rev or 0) .. ")")
+            -- GS:msg("Received updated record for " .. name .. " (Rev: " .. (remoteData.rev or 0) .. ")")
         end
     elseif data.type == "LAYER_QUERY" then
-        GID:send({
+        GS:send({
             type = "LAYER_RESPONSE",
             name = CHAR.NAME,
             level = UnitLevel("player"),
             zone = GetRealZoneText(),
-            layer = GID:GetLayer(),
+            layer = GS:GetLayer(),
             inGroup = IsInGroup()
         })
     elseif data.type == "LAYER_RESPONSE" then
-        if not GID.LayerData then GID.LayerData = {} end
-        GID.LayerData[data.name] = {
+        if not GS.LayerData then GS.LayerData = {} end
+        GS.LayerData[data.name] = {
             level = data.level,
             zone = data.zone,
             layer = data.layer,
             inGroup = data.inGroup,
             time = GetTime()
         }
-        if MainFrame:IsVisible() and GID.currentTab == 2 then
-            GID:UpdateLayerTable()
+        if MainFrame:IsVisible() and GS.currentTab == 2 then
+            GS:UpdateLayerTable()
         end
     elseif data.type == "LAYER_INVITE_REQUEST" then
         if data.target == CHAR.NAME and not IsInGroup() then
@@ -483,20 +526,20 @@ function GID:handleIncomingMessage(data, sender)
         local mID = data.mapID
         local lID = data.layerID
         if mID and lID then
-            GID.detectedLayers[mID] = GID.detectedLayers[mID] or {}
+            GS.detectedLayers[mID] = GS.detectedLayers[mID] or {}
             local found = false
-            for _, id in ipairs(GID.detectedLayers[mID]) do
+            for _, id in ipairs(GS.detectedLayers[mID]) do
                 if id == lID then found = true break end
             end
             if not found then
-                table.insert(GID.detectedLayers[mID], lID)
-                table.sort(GID.detectedLayers[mID])
+                table.insert(GS.detectedLayers[mID], lID)
+                table.sort(GS.detectedLayers[mID])
             end
         end
     end
 end
 
-function GID:mergeRecords(payload, sender)
+function GS:mergeRecords(payload, sender)
     GuildIDs = GuildIDs or {}
     for name, record in pairs(payload) do
         if type(name) == "string" and type(record) == "table" then
@@ -510,38 +553,38 @@ function GID:mergeRecords(payload, sender)
     end
 end
 
-function GID:onEvent(event, ...)
+function GS:onEvent(event, ...)
    if (event == "ADDON_LOADED") then
       local addonName = ...
       if addonName == ADDON_NAME then
          GuildIDs = GuildIDs or {}
-         GID_DetectedLayers = GID_DetectedLayers or {}
-         GID:init();
-         GID:InitMinimap();
-         GID:InitLayerScan();
+         GS_DetectedLayers = GS_DetectedLayers or {}
+         GS:init();
+         GS:InitMinimap();
+         GS:InitLayerScan();
       end
-   elseif (event == "CHAT_MSG_ADDON" and select(1,...) == GID_PREFIX) then
+   elseif (event == "CHAT_MSG_ADDON" and select(1,...) == GS_PREFIX) then
       local prefix, message, channel, sender = ...
-      local data = GID:decompress(message)
+      local data = GS:decompress(message)
       if type(data) == "table" then
          if data.type then
-            GID:handleIncomingMessage(data, sender)
+            GS:handleIncomingMessage(data, sender)
          else
             -- Legacy/Bulk payload without explicit type: treat as { [playerName] = record, ... }
-            GID:mergeRecords(data, sender)
+            GS:mergeRecords(data, sender)
          end
       end
    elseif (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
-      GID.lastKnownLayerID = nil
-      GID:clean_ids()
+      GS.lastKnownLayerID = nil
+      GS:clean_ids()
+      GS:update(event == "PLAYER_ENTERING_WORLD")
       if event == "PLAYER_ENTERING_WORLD" then
-          GID:update()
-          C_Timer.After(math.random(2, 5), function() GID:sendHello() end)
+          C_Timer.After(math.random(2, 5), function() GS:sendPull() end)
       end
    elseif (event == "UPDATE_INSTANCE_INFO" or event == "QUEST_TURNED_IN") then
-      GID:update()
+      GS:update()
    elseif (event == "UPDATE_MOUSEOVER_UNIT" or event == "PLAYER_TARGET_CHANGED" or event == "UNIT_TARGET") then
-      GID:ScanLayer(event)
+      GS:ScanLayer(event)
    elseif (event == "NAME_PLATE_UNIT_ADDED") then
       local unit = ...
       if unit then
@@ -554,16 +597,16 @@ function GID:onEvent(event, ...)
       if destGUID then ParseAndRecordLayerFromGUID(destGUID, true) end
    elseif (event == "PARTY_INVITE_REQUEST") then
       local sender = ...
-      if GID.ExpectedInviteSender and (sender == GID.ExpectedInviteSender or GID:string_split(sender, "-")[1] == GID.ExpectedInviteSender) then
+      if GS.ExpectedInviteSender and (sender == GS.ExpectedInviteSender or GS:string_split(sender, "-")[1] == GS.ExpectedInviteSender) then
          -- Check if still within timeout (e.g. 30 seconds)
-         if GetTime() - (GID.ExpectedInviteTime or 0) < 30 then
+         if GetTime() - (GS.ExpectedInviteTime or 0) < 30 then
             AcceptGroup()
             -- Hide the invite popup
             StaticPopup_Hide("PARTY_INVITE")
-            GID:msg(string.format(GID_L["MSG_AUTO_ACCEPTED_INVITE"], sender), "green")
+            GS:msg(string.format(GS_L["MSG_AUTO_ACCEPTED_INVITE"], sender), "green")
          end
-         GID.ExpectedInviteSender = nil
-         GID.ExpectedInviteTime = nil
+         GS.ExpectedInviteSender = nil
+         GS.ExpectedInviteTime = nil
       end
    end
 end
