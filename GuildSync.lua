@@ -1,34 +1,27 @@
+StaticPopupDialogs["GUILDSYNC_CONFIRM_LAYER_INVITE"] = {
+    text = GID_L["UI_LAYER_INVITE_CONFIRM_TEXT"],
+    button1 = ACCEPT,
+    button2 = CANCEL,
+    OnAccept = function(self, data)
+        if C_PartyInfo and C_PartyInfo.InviteUnit then
+            C_PartyInfo.InviteUnit(data)
+        else
+            InviteUnit(data)
+        end
+    end,
+    timeout = 30,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
 function GID:init()
    C_ChatInfo.RegisterAddonMessagePrefix(GID_PREFIX);
    GID:msg(string.format(GID_L["MSG_LOADED"], ADDON_NAME, GID_VERSION))
 
-   SLASH_GID1, SLASH_GID2 = '/gid', '/gidsync'
-   SlashCmdList["GID"] = function(msg)   -- add /gid and /gidsync to command list
-      local cmd = msg:lower()
-      if cmd == "show" then
-         GID:showUI()
-      elseif cmd == "all" then
-         GID:list_all()
-      elseif cmd == "own" then
-         if GuildIDs ~= nil and GuildIDs[CHAR.NAME] ~= nil then
-            GID:list(GuildIDs[CHAR.NAME].IDs)
-         else
-            GID:msg(GID_L["MSG_NO_OWN_IDS"])
-         end
-      elseif cmd == "clear" then
-         GID:clear()
-      elseif cmd == "update" then
-         GID:update()
-      elseif cmd == "online" then
-         GID:list_online_players()
-      else
-         GID:msg(GID_L["MSG_CMD_LIST_TITLE"])
-         GID:msg(GID_L["MSG_CMD_SHOW"])
-         GID:msg(GID_L["MSG_CMD_OWN"])
-         GID:msg(GID_L["MSG_CMD_ALL"])
-         GID:msg(GID_L["MSG_CMD_CLEAR"])
-         GID:msg(GID_L["MSG_CMD_UPDATE"])
-      end
+   SLASH_GS1 = '/gs'
+   SlashCmdList["GS"] = function(msg)
+      GID:Toggle()
    end
 end
 
@@ -78,9 +71,101 @@ function GID:builtIDs(myInstances)
       ids[instanceDifficultyName][instanceName] = {instanceReset = GetServerTime() + instanceReset, instanceID = instanceID, instanceLocked = instanceLocked}
    end
    return ids
-end
+   end
 
-function GID:builtPvPQuests()
+   function GID:InitLayerScan()
+       GID.detectedLayers = GID_DetectedLayers
+       GID.lastKnownLayerID = nil
+       
+       -- Wir nutzen denselben Frame GID, um Events zentral in onEvent zu verarbeiten.
+       -- Der extra Frame hier ist nicht nötig und könnte zu Konflikten führen,
+       -- da er dieselben Events wie der Hauptframe registriert.
+   end
+
+   local function ParseAndRecordLayerFromGUID(guid, isPassive)
+       if not guid then return false end
+       local parts = { strsplit("-", guid) }
+       local unitType = parts[1]
+       local instanceID = parts[4]
+       if unitType ~= "Creature" or not instanceID then return false end
+       local instID = tonumber(instanceID)
+       if instID == nil then return false end
+
+       local mapID = C_Map.GetBestMapForUnit("player")
+       if not mapID then return false end
+
+       local changed = false
+       if GID.lastKnownLayerID ~= instID then
+           -- Only update lastKnownLayerID passively if we already had a layer.
+           -- This satisfies the user's request to show "unknown" at the start
+           -- until they manually target or mouseover an NPC.
+           if not isPassive or GID.lastKnownLayerID ~= nil then
+               GID.lastKnownLayerID = instID
+               changed = true
+           end
+           
+           -- Ensure table for current map exists
+           GID.detectedLayers[mapID] = GID.detectedLayers[mapID] or {}
+           
+           -- neue ID ggf. in die bekannte Liste aufnehmen (Mapping immer aktualisieren)
+           local found = false
+           for _, id in ipairs(GID.detectedLayers[mapID]) do
+               if id == instID then
+                   found = true
+                   break
+               end
+           end
+           if not found then
+               table.insert(GID.detectedLayers[mapID], instID)
+               table.sort(GID.detectedLayers[mapID])
+               
+               -- Share discovery with guild so everyone has same layer mapping
+               GID:send({type = "LAYER_MAP_UPDATE", mapID = mapID, layerID = instID})
+               changed = true
+           end
+           
+           -- UI live aktualisieren, falls sichtbar und etwas sich geändert hat
+           if changed and MainFrame and MainFrame:IsVisible() and GID.currentTab == 2 then
+               GID:UpdateLayerTable()
+           end
+           return true
+       end
+       return false
+   end
+
+   function GID:ScanLayer(event, unit)
+       local targetUnit = unit or "mouseover"
+       if event == "PLAYER_TARGET_CHANGED" then targetUnit = "target" end
+       local guid = UnitGUID(targetUnit)
+       ParseAndRecordLayerFromGUID(guid, false) -- active scan
+   end
+
+   function GID:GetLayer()
+       -- 0. Check NovaWorldBuffs integration if available
+       if _G.NWB_CurrentLayer and _G.NWB_CurrentLayer > 0 then
+           return tostring(_G.NWB_CurrentLayer)
+       end
+       if _G.NWB and _G.NWB.currentLayer and _G.NWB.currentLayer > 0 then
+           return tostring(_G.NWB.currentLayer)
+       end
+
+       -- 1. Unsere eigene NPC-basierte Heuristik (NPCs in der Zone scannen)
+       if GID.lastKnownLayerID ~= nil then
+           local mapID = C_Map.GetBestMapForUnit("player")
+           if mapID and GID.detectedLayers[mapID] then
+               for i, id in ipairs(GID.detectedLayers[mapID]) do
+                   if id == GID.lastKnownLayerID then
+                       return tostring(i)
+                   end
+               end
+           end
+       end
+
+       -- 2. Wenn wir keinen präzisen Layer haben, geben wir nil zurück.
+       return nil
+   end
+
+   function GID:builtPvPQuests()
    local quests = {}
    for _, pvpQuest in ipairs(GID.pvpQuests) do
       local completed = false
@@ -348,6 +433,80 @@ function GID:handleIncomingMessage(data, sender)
             GuildIDs[name] = remoteData
             -- GID:msg("Received updated record for " .. name .. " (Rev: " .. (remoteData.rev or 0) .. ")")
         end
+    elseif data.type == "LAYER_QUERY" then
+        GID:send({
+            type = "LAYER_RESPONSE",
+            name = CHAR.NAME,
+            level = UnitLevel("player"),
+            zone = GetRealZoneText(),
+            layer = GID:GetLayer(),
+            inGroup = IsInGroup()
+        })
+    elseif data.type == "LAYER_RESPONSE" then
+        if not GID.LayerData then GID.LayerData = {} end
+        GID.LayerData[data.name] = {
+            level = data.level,
+            zone = data.zone,
+            layer = data.layer,
+            inGroup = data.inGroup,
+            time = GetTime()
+        }
+        if MainFrame:IsVisible() and GID.currentTab == 2 then
+            GID:UpdateLayerTable()
+        end
+    elseif data.type == "LAYER_INVITE_REQUEST" then
+        if data.target == CHAR.NAME and not IsInGroup() then
+            -- Check if auto-accept is enabled in settings
+            if GuildSyncDB.settings and GuildSyncDB.settings.autoAcceptLayerInvite then
+                if C_PartyInfo and C_PartyInfo.InviteUnit then
+                    C_PartyInfo.InviteUnit(sender)
+                else
+                    InviteUnit(sender)
+                end
+            else
+                -- We are the target, we ask for confirmation before inviting the sender
+                StaticPopup_Show("GUILDSYNC_CONFIRM_LAYER_INVITE", sender, nil, sender)
+            end
+        end
+    elseif data.type == "LAYER_INVITE_ACK" then
+        -- The sender of the request acknowledged that they sent an invite (if we were the target)
+        -- Or in this case: The requester sent a message, and we (the target) invited them.
+        -- Actually, we need to track on the REQUESTER side.
+        -- Let's re-think the flow.
+        -- 1. Player A clicks "Invite" on Player B in the list.
+        -- 2. Player A sends LAYER_INVITE_REQUEST { target = B }
+        -- 3. Player B receives it, checks if target is self and not in group.
+        -- 4. Player B invites Player A.
+        -- 5. Player A receives PARTY_INVITE_REQUEST from Player B.
+        -- 6. Player A should auto-accept.
+    elseif data.type == "LAYER_MAP_UPDATE" then
+        local mID = data.mapID
+        local lID = data.layerID
+        if mID and lID then
+            GID.detectedLayers[mID] = GID.detectedLayers[mID] or {}
+            local found = false
+            for _, id in ipairs(GID.detectedLayers[mID]) do
+                if id == lID then found = true break end
+            end
+            if not found then
+                table.insert(GID.detectedLayers[mID], lID)
+                table.sort(GID.detectedLayers[mID])
+            end
+        end
+    end
+end
+
+function GID:mergeRecords(payload, sender)
+    GuildIDs = GuildIDs or {}
+    for name, record in pairs(payload) do
+        if type(name) == "string" and type(record) == "table" then
+            local localRev = (GuildIDs[name] and GuildIDs[name].rev) or 0
+            local remoteRev = (record.rev) or 0
+            if not GuildIDs[name] or remoteRev >= localRev then
+                if not record.rev then record.rev = 1 end
+                GuildIDs[name] = record
+            end
+        end
     end
 end
 
@@ -355,18 +514,56 @@ function GID:onEvent(event, ...)
    if (event == "ADDON_LOADED") then
       local addonName = ...
       if addonName == ADDON_NAME then
+         GuildIDs = GuildIDs or {}
+         GID_DetectedLayers = GID_DetectedLayers or {}
          GID:init();
+         GID:InitMinimap();
+         GID:InitLayerScan();
       end
    elseif (event == "CHAT_MSG_ADDON" and select(1,...) == GID_PREFIX) then
       local prefix, message, channel, sender = ...
       local data = GID:decompress(message)
-      if data and data.type then
-         GID:handleIncomingMessage(data, sender)
+      if type(data) == "table" then
+         if data.type then
+            GID:handleIncomingMessage(data, sender)
+         else
+            -- Legacy/Bulk payload without explicit type: treat as { [playerName] = record, ... }
+            GID:mergeRecords(data, sender)
+         end
       end
-   elseif (event == "PLAYER_ENTERING_WORLD") then
+   elseif (event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA") then
+      GID.lastKnownLayerID = nil
       GID:clean_ids()
+      if event == "PLAYER_ENTERING_WORLD" then
+          GID:update()
+          C_Timer.After(math.random(2, 5), function() GID:sendHello() end)
+      end
+   elseif (event == "UPDATE_INSTANCE_INFO" or event == "QUEST_TURNED_IN") then
       GID:update()
-      -- Sende HELLO beim Login
-      C_Timer.After(math.random(2, 5), function() GID:sendHello() end)
+   elseif (event == "UPDATE_MOUSEOVER_UNIT" or event == "PLAYER_TARGET_CHANGED" or event == "UNIT_TARGET") then
+      GID:ScanLayer(event)
+   elseif (event == "NAME_PLATE_UNIT_ADDED") then
+      local unit = ...
+      if unit then
+         local guid = UnitGUID(unit)
+         if guid then ParseAndRecordLayerFromGUID(guid, true) end
+      end
+   elseif (event == "COMBAT_LOG_EVENT_UNFILTERED") then
+      local _, subEvent, _, sourceGUID, _, _, _, destGUID = CombatLogGetCurrentEventInfo()
+      if sourceGUID then ParseAndRecordLayerFromGUID(sourceGUID, true) end
+      if destGUID then ParseAndRecordLayerFromGUID(destGUID, true) end
+   elseif (event == "PARTY_INVITE_REQUEST") then
+      local sender = ...
+      if GID.ExpectedInviteSender and (sender == GID.ExpectedInviteSender or GID:string_split(sender, "-")[1] == GID.ExpectedInviteSender) then
+         -- Check if still within timeout (e.g. 30 seconds)
+         if GetTime() - (GID.ExpectedInviteTime or 0) < 30 then
+            AcceptGroup()
+            -- Hide the invite popup
+            StaticPopup_Hide("PARTY_INVITE")
+            GID:msg(string.format(GID_L["MSG_AUTO_ACCEPTED_INVITE"], sender), "green")
+         end
+         GID.ExpectedInviteSender = nil
+         GID.ExpectedInviteTime = nil
+      end
    end
 end

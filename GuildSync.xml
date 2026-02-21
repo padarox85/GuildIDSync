@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Frame name="GID">
+		<Scripts>
+			<OnLoad>
+				self:RegisterEvent("CHAT_MSG_ADDON");
+				self:RegisterEvent("PLAYER_ENTERING_WORLD");
+				self:RegisterEvent("ADDON_LOADED");
+				self:RegisterEvent("UPDATE_MOUSEOVER_UNIT");
+				self:RegisterEvent("PLAYER_TARGET_CHANGED");
+				self:RegisterEvent("UNIT_TARGET");
+				self:RegisterEvent("ZONE_CHANGED_NEW_AREA");
+				self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
+				self:RegisterEvent("NAME_PLATE_UNIT_ADDED");
+				self:RegisterEvent("PARTY_INVITE_REQUEST");
+				self:RegisterEvent("UPDATE_INSTANCE_INFO");
+				self:RegisterEvent("QUEST_TURNED_IN");
+			</OnLoad>
+			<OnEvent>
+				GID:onEvent(event, ...);
+			</OnEvent>
+		</Scripts>
+	</Frame>
+</Ui>

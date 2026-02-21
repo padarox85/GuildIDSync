@@ -1,0 +1,17 @@
+## Interface: 30400, 20505
+## Version: 1.0.3
+## Title: Guild Sync
+## Notes: Addon to sync used IDs and Layers from Guild members
+## Author: Lisilya@Transcendence
+## SavedVariables: GuildIDs, GIDUIPrefs, GuildSyncDB, GID_DetectedLayers
+
+Libs\LibStub\LibStub.lua
+Libs\LibDeflate\LibDeflate.lua
+Libs\AceSerializer-3.0\AceSerializer-3.0.lua
+
+init.lua
+Localization.lua
+Helpers.lua
+GuildSync.lua
+GuildSync.xml
+GuildSyncUI.lua

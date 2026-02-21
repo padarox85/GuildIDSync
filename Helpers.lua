@@ -90,10 +90,9 @@ GID.pvpQuests = {
 		11335, 11336, 11337, 11338, 11339, 11340, 11341, 11342, 11499, 11500, -- Repeat IDs from TBC often used
 		13442, 13443, 13444, 13445, 13446, 13447, 13448, 13449, 13450, -- Newer WotLK IDs
 	} },
-	{ name = GID_L["PVP_HELLFIRE"], ids = { 13409, 10106 } }, -- Hellfire Fortifications (H/A)
-	{ name = GID_L["PVP_ZANGAR"], ids = { 9739, 9738 } }, -- Twin Spire Blessings (H/A)
+	{ name = GID_L["PVP_HELLFIRE"], ids = { 10110, 10106 } }, -- Hellfire Fortifications (H/A)
 	{ name = GID_L["PVP_TEROKKAR"], ids = { 11505, 11506 } }, -- Spirits of Auchindoun (A/H)
-	{ name = GID_L["PVP_NAGRAND"], ids = { 10107, 10108 } }, -- Halaa (A/H)
+	{ name = GID_L["PVP_NAGRAND"], ids = { 11503, 11502 } }, -- Halaa (A/H)
 }
 
 -- Add WotLK specific PvP quests
@@ -152,7 +151,7 @@ end
 
 function GID:compress(data)
     if data ~= nil then
-        local serialized = LibSerialize:Serialize(data)
+        local serialized = AceSerializer:Serialize(data)
         local compressed = LibDeflate:CompressDeflate(serialized)
         return LibDeflate:EncodeForWoWAddonChannel(compressed)
     end
@@ -164,7 +163,7 @@ function GID:decompress(payload)
         if not decoded then return end
         local decompressed = LibDeflate:DecompressDeflate(decoded)
         if not decompressed then return end
-        local success, data = LibSerialize:Deserialize(decompressed)
+        local success, data = AceSerializer:Deserialize(decompressed)
         if not success then return end
         return data
     end
