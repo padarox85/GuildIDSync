@@ -1,5 +1,5 @@
 ## Interface: 30400, 20505
-## Version: 2.0.4
+## Version: 2.0.5
 ## Title: Guild Sync
 ## Notes: Addon to sync used IDs and Layers from Guild members
 ## Author: Lisilya@Transcendence

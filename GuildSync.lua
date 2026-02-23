@@ -137,14 +137,12 @@ end
    end
 
    function GS:ScanLayer(event, unit)
-       local targetUnit = unit or "mouseover"
-       if event == "PLAYER_TARGET_CHANGED" then targetUnit = "target" end
-       local guid = UnitGUID(targetUnit)
-       ParseAndRecordLayerFromGUID(guid, false) -- active scan
+       -- NovaWorldBuffs is now mandatory for layer detection.
+       -- Own NPC heuristic is disabled.
    end
 
    function GS:GetLayer()
-       -- 0. Check NovaWorldBuffs integration if available
+       -- Check NovaWorldBuffs integration
        if _G.NWB_CurrentLayer and _G.NWB_CurrentLayer > 0 then
            return tostring(_G.NWB_CurrentLayer)
        end
@@ -152,19 +150,7 @@ end
            return tostring(_G.NWB.currentLayer)
        end
 
-       -- 1. Unsere eigene NPC-basierte Heuristik (NPCs in der Zone scannen)
-       if GS.lastKnownLayerID ~= nil then
-           local mapID = C_Map.GetBestMapForUnit("player")
-           if mapID and GS.detectedLayers[mapID] then
-               for i, id in ipairs(GS.detectedLayers[mapID]) do
-                   if id == GS.lastKnownLayerID then
-                       return tostring(i)
-                   end
-               end
-           end
-       end
-
-       -- 2. Wenn wir keinen präzisen Layer haben, geben wir nil zurück.
+       -- NovaWorldBuffs is now mandatory for layer detection as per user request.
        return nil
    end
 
@@ -299,7 +285,7 @@ end
 
 function GS:check_valid_difficulty_for_player(player_name, instance_difficulty)
    local has_valid_difficulty = false
-   if GuildIDs ~= nil then
+   if GuildIDs ~= nil and GuildIDs[player_name] and GuildIDs[player_name].IDs then
       for difficulty, instances in pairs(GuildIDs[player_name].IDs) do
          if difficulty == instance_difficulty or difficulty == 'ALL' then
             for _, instance_details in pairs(instances) do
@@ -472,7 +458,7 @@ function GS:handleIncomingMessage(data, sender)
         -- Wir empfangen einen Record
         local name = data.name
         local remoteData = data.data
-        if not GuildIDs[name] or (remoteData.rev or 0) > (GuildIDs[name].rev or 0) then
+        if remoteData and (not GuildIDs[name] or (remoteData.rev or 0) > (GuildIDs[name].rev or 0)) then
             GuildIDs[name] = remoteData
             -- GS:msg("Received updated record for " .. name .. " (Rev: " .. (remoteData.rev or 0) .. ")")
         end
@@ -498,7 +484,7 @@ function GS:handleIncomingMessage(data, sender)
             GS:UpdateLayerTable()
         end
     elseif data.type == "LAYER_INVITE_REQUEST" then
-        if data.target == CHAR.NAME and not IsInGroup() then
+        if data.target == CHAR.NAME and not IsInGroup() and not IsInRaid() then
             -- Check if auto-accept is enabled in settings
             if GuildSyncDB.settings and GuildSyncDB.settings.autoAcceptLayerInvite then
                 if C_PartyInfo and C_PartyInfo.InviteUnit then
@@ -583,18 +569,6 @@ function GS:onEvent(event, ...)
       end
    elseif (event == "UPDATE_INSTANCE_INFO" or event == "QUEST_TURNED_IN") then
       GS:update()
-   elseif (event == "UPDATE_MOUSEOVER_UNIT" or event == "PLAYER_TARGET_CHANGED" or event == "UNIT_TARGET") then
-      GS:ScanLayer(event)
-   elseif (event == "NAME_PLATE_UNIT_ADDED") then
-      local unit = ...
-      if unit then
-         local guid = UnitGUID(unit)
-         if guid then ParseAndRecordLayerFromGUID(guid, true) end
-      end
-   elseif (event == "COMBAT_LOG_EVENT_UNFILTERED") then
-      local _, subEvent, _, sourceGUID, _, _, _, destGUID = CombatLogGetCurrentEventInfo()
-      if sourceGUID then ParseAndRecordLayerFromGUID(sourceGUID, true) end
-      if destGUID then ParseAndRecordLayerFromGUID(destGUID, true) end
    elseif (event == "PARTY_INVITE_REQUEST") then
       local sender = ...
       if GS.ExpectedInviteSender and (sender == GS.ExpectedInviteSender or GS:string_split(sender, "-")[1] == GS.ExpectedInviteSender) then

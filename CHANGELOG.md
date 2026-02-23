@@ -1,6 +1,37 @@
-# GuildSync - Changelog (Version 1.0.3)
+# GuildSync - Changelog
 
-### [General]
+## [2.0.5] - 2026-02-23
+
+### Bug Fixes
+- **Nil-Value Error Fix**: Fixed a crash in `GuildSync.lua` when receiving a `RECORD` message with missing data.
+- **Robustness**: Added additional nil-checks in the difficulty verification logic to prevent potential errors with incomplete player data.
+
+## [2.0.4] - 2024-02-21
+
+### Simplified Synchronization Mechanism
+- **Initial PULL on Load**: When the addon is loaded (`PLAYER_ENTERING_WORLD`), a `PULL` request is now automatically sent to the guild to request current data.
+- **Push-on-Change**: Data (lockouts and quests) is only sent to the guild when an actual change in your own status is detected.
+- **Optimized Triggers**: A sync is triggered on login, zone changes (`ZONE_CHANGED_NEW_AREA`), quest completions, and instance info updates – but only if the data has changed.
+- **Efficiency**: A fast comparison of serialized data structures is used to detect changes and avoid unnecessary network traffic.
+
+### Version Checking & Update Notifications
+- **Version Tracking**: The addon version is now included with every outgoing message.
+- **Update Notification**: The addon now checks incoming messages to see if a newer version is available.
+- **Chat Notice**: If a newer version is detected, a yellow system message appears in the chat once per session.
+
+### Refactoring & Cleanup
+- **Global Renaming**: All internal references have been changed from `GID` to `GS` (GuildSync).
+- **Prefix Update**: The communication prefix has been changed to `GS`.
+- **Command Cleanup**: Outdated references to `/gid update` have been removed, as synchronization is now fully automatic in the background.
+- **Command Update**: All slash commands have been unified to `/gs` (e.g., `/gs show`, `/gs own`, `/gs all`, `/gs clear`).
+
+### Bug Fixes
+- Corrected a loop error in capturing instance IDs.
+- Stabilized difficulty detection for TBC Anniversary (2.5.5).
+
+---
+
+## [1.0.4]
 - The addon has been renamed from **GuildIDSync** to **GuildSync**. All files and saved variables have been migrated accordingly.
 - **Migration**: Existing settings from *GuildIDSyncDB* are automatically imported into *GuildSyncDB*.
 - **Settings Tab**: Added a new settings tab to configure addon behavior.

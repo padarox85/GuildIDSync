@@ -1,7 +1,7 @@
 -- Konstanten
 GS_PREFIX = "GS";
 ADDON_NAME = "GuildSync";
-GS_VERSION = "2.0.4";
+GS_VERSION = "2.0.5";
 CHAR = {}
 CHAR.NAME, CHAR.REALM = UnitName("player")
 CHAR.LEVEL = UnitLevel("player")

@@ -380,6 +380,26 @@ function GS:ShowLayeringTab()
         end
         GS.LayerCurrentFS:SetText(string.format(GS_L["UI_LAYER_CURRENT"], GS:GetLayer() or GS_L["UI_LAYER_UNKNOWN"]))
 
+        -- Loading Spinner (hidden by default)
+        if not GS.LayerLoadingSpinner then
+            GS.LayerLoadingSpinner = CreateFrame("Frame", nil, GS.LayerFrame)
+            GS.LayerLoadingSpinner:SetSize(48, 48)
+            GS.LayerLoadingSpinner:SetPoint("CENTER", GS.LayerFrame, "CENTER", 0, -20)
+            
+            local tex = GS.LayerLoadingSpinner:CreateTexture(nil, "ARTWORK")
+            tex:SetAllPoints()
+            tex:SetTexture("Interface\\COMMON\\StreamFrame")
+            tex:SetTexCoord(0, 0.5, 0, 0.5)
+            
+            GS.LayerLoadingSpinner.tex = tex
+            GS.LayerLoadingSpinner:Hide()
+            
+            GS.LayerLoadingSpinner:SetScript("OnUpdate", function(self, elapsed)
+                self.rotation = (self.rotation or 0) + (elapsed * 3)
+                self.tex:SetRotation(-self.rotation)
+            end)
+        end
+
         -- Recurring update for "Current Layer" text
         GS.LayerFrame:SetScript("OnUpdate", function(self, elapsed)
             self.updateTimer = (self.updateTimer or 0) + elapsed
@@ -415,6 +435,11 @@ function GS:RefreshLayerData()
     GS.LayerLastQueryTime = now
     GS:send({type = "LAYER_QUERY"})
     GS:msg(GS_L["UI_LAYER_QUERY_SENT"])
+    
+    -- Show loading indicator
+    if GS.LayerLoadingSpinner then
+        GS.LayerLoadingSpinner:Show()
+    end
     
     -- Update UI to show loading immediately
     GS:UpdateLayerTable()
@@ -469,9 +494,35 @@ function GS:UpdateLayerTable()
     -- Besser: Wir nutzen einen permanenten FontString für Statusmeldungen.
     if not GS.LayerStatusFS then
         GS.LayerStatusFS = GS.LayerTableContent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-        GS.LayerStatusFS:SetPoint("CENTER", GS.LayerTableContent, 0, 0)
+        GS.LayerStatusFS:SetPoint("CENTER", GS.LayerTableContent, 0, 10)
     end
     GS.LayerStatusFS:Hide()
+
+    -- NovaWorldBuffs Link EditBox
+    if not GS.LayerNWBLinkEditBox then
+        local editBox = CreateFrame("EditBox", nil, GS.LayerTableContent, "InputBoxTemplate")
+        editBox:SetSize(400, 30)
+        editBox:SetPoint("TOP", GS.LayerStatusFS, "BOTTOM", 0, -20)
+        editBox:SetAutoFocus(false)
+        editBox:SetText("https://www.curseforge.com/wow/addons/nova-world-buffs")
+        editBox:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
+        editBox:SetScript("OnChar", function(self) self:SetText("https://www.curseforge.com/wow/addons/nova-world-buffs") self:HighlightText() end)
+        
+        local label = editBox:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        label:SetPoint("BOTTOM", editBox, "TOP", 0, 5)
+        editBox.label = label
+        
+        GS.LayerNWBLinkEditBox = editBox
+    end
+    GS.LayerNWBLinkEditBox:Hide()
+    
+    -- Hide loading indicator if we have data or cooldown is over
+    local lastQuery = GS.LayerLastQueryTime or 0
+    if GS.LayerLoadingSpinner then
+        if GetTime() - lastQuery > 30 then
+            GS.LayerLoadingSpinner:Hide()
+        end
+    end
     
     local now = GetTime()
     local sortedPlayers = {}
@@ -488,15 +539,34 @@ function GS:UpdateLayerTable()
         local msg = GS_L["UI_LAYER_LOADING"]
         local lastQuery = GS.LayerLastQueryTime or 0
         
-        if not GS:GetLayer() then
+        -- Check if NovaWorldBuffs is missing
+        local nwbMissing = not (_G.NWB_CurrentLayer or (_G.NWB and _G.NWB.currentLayer))
+        
+        if nwbMissing then
+            msg = "|cffff0000" .. GS_L["UI_LAYER_REQUIRES_NWB"] .. "|r"
+            if GS.LayerLoadingSpinner then GS.LayerLoadingSpinner:Hide() end
+            if GS.LayerNWBLinkEditBox then
+                GS.LayerNWBLinkEditBox.label:SetText(GS_L["UI_LAYER_NWB_LINK_LABEL"])
+                GS.LayerNWBLinkEditBox:Show()
+            end
+        elseif not GS:GetLayer() then
             msg = GS_L["UI_LAYER_UNKNOWN_PROMPT"]
+            if GS.LayerLoadingSpinner then GS.LayerLoadingSpinner:Hide() end
         elseif GetTime() - lastQuery > 30 then
             msg = GS_L["UI_LAYER_NO_DATA"]
+            if GS.LayerLoadingSpinner then GS.LayerLoadingSpinner:Hide() end
+        else
+            -- We are actually loading (within 30s)
+            if GS.LayerLoadingSpinner then GS.LayerLoadingSpinner:Show() end
         end
         
         GS.LayerStatusFS:SetText(msg)
         GS.LayerStatusFS:Show()
         return
+    end
+
+    if #sortedPlayers > 0 then
+        if GS.LayerLoadingSpinner then GS.LayerLoadingSpinner:Hide() end
     end
 
     table.sort(sortedPlayers, function(a, b) return a.name < b.name end)
@@ -546,6 +616,10 @@ function GS:UpdateLayerTable()
             end
 
             btn:SetScript("OnClick", function()
+                if IsInGroup() or IsInRaid() then
+                    GS:msg(GS_L["UI_LAYER_INVITE_IN_GROUP_ERROR"], "red")
+                    return
+                end
                 GS.ExpectedInviteSender = p.name
                 GS.ExpectedInviteTime = GetTime()
                 GS:send({type = "LAYER_INVITE_REQUEST", target = p.name})
