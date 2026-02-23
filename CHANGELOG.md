@@ -1,10 +1,15 @@
 # GuildSync - Changelog
 
-## [2.0.5] - 2026-02-23
+## [2.0.6] - 2026-02-23
 
 ### Bug Fixes
 - **Nil-Value Error Fix**: Fixed a crash in `GuildSync.lua` when receiving a `RECORD` message with missing data.
 - **Robustness**: Added additional nil-checks in the difficulty verification logic to prevent potential errors with incomplete player data.
+
+## [2.0.5] - 2026-02-23
+
+### Dependency Change
+- Layer detection now requires NovaWorldBuffs (NWB). The internal NPC-based heuristic has been disabled to standardize detection via NWB APIs.
 
 ## [2.0.4] - 2024-02-21
 
